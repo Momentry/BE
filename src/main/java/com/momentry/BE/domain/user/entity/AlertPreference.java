@@ -7,13 +7,11 @@ import org.springframework.util.Assert;
 @Entity
 @Table(name = "alerts")
 @Getter
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+//@AllArgsConstructor(access = AccessLevel.PRIVATE) // 직접 만든 생성자와 충돌나서 주석처리 했습니다.
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AlertPreference {
 
     @Id
-    private Long userId;
-
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId // users 테이블의 PK를 alerts 테이블의 PK로 사용
     @JoinColumn(name = "user_id")
