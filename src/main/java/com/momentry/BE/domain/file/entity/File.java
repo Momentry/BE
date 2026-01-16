@@ -33,7 +33,7 @@ public class File {
     private String metadata; // 촬영 장비, 해상도 등 JSON 데이터
 
     @Column(nullable = false)
-    private Long likesCount = 0L; // 기본값 0 설정
+    private Long likesCount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -47,7 +47,7 @@ public class File {
 
     @Builder
     public File(Album album, String originUrl, String thumbUrl, String displayUrl,
-                String metadata, FileType fileType, Long uploaderId) {
+                String metadata, FileType fileType, Long uploaderId, LocalDateTime createdAt) {
         this.album = album;
         this.originUrl = originUrl;
         this.thumbUrl = thumbUrl;
@@ -55,11 +55,8 @@ public class File {
         this.metadata = metadata;
         this.fileType = fileType;
         this.uploaderId = uploaderId;
-        this.likesCount = 0L;
-    }
+        this.createdAt = (createdAt==null) ? LocalDateTime.now() : createdAt;
 
-    @PrePersist
-    public void prePersist() {
-        this.createdAt = LocalDateTime.now();
+        this.likesCount = 0L; // 기본값은 0
     }
 }
