@@ -9,7 +9,7 @@ import org.springframework.util.Assert;
 @Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Alert {
+public class AlertPreference {
 
     @Id
     private Long userId;
@@ -29,7 +29,7 @@ public class Alert {
     private Boolean fileUploaded;
 
     @Builder
-    public Alert(User user, Boolean albumCreated, Boolean invited, Boolean fileUploaded){
+    public AlertPreference(User user, Boolean albumCreated, Boolean invited, Boolean fileUploaded){
         // 유효성 체크: 필수 값이 없으면 객체 생성 자체를 막음
         Assert.notNull(user, "사용자는 필수 값입니다.");
 

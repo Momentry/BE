@@ -57,7 +57,7 @@ public class User {
     // 그럼 이걸 제외하는게 좋을지? 아니면 감수해야할지 고민
     // 만약 양방향으로 간다면, 순환참조 문제가 없게끔 조심해야 한다
 //    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-//    private Alert alert;
+//    private AlertPreference alert;
 
     @Builder
     public User(String email, String username, String provider, String providerId,
