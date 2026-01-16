@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -37,6 +38,7 @@ public class User {
     @Column(columnDefinition = "TEXT")
     private String fcmToken;
 
+    @Column(nullable = false, columnDefinition = "tinyint(1) default 1")
     private Boolean isActive = true;
 
     @CreatedDate
@@ -57,4 +59,15 @@ public class User {
     // 만약 양방향으로 간다면, 순환참조 문제가 없게끔 조심해야 한다
 //    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 //    private Alert alert;
+
+    @Builder
+    public User(String email, String username, String provider, String providerId,
+                String profileImageUrl, AccountPlan accountPlan) {
+        this.email = email;
+        this.username = username;
+        this.provider = provider;
+        this.providerId = providerId;
+        this.profileImageUrl = profileImageUrl;
+        this.accountPlan = accountPlan;
+    }
 }

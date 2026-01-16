@@ -32,8 +32,8 @@ public class File {
     @Column(columnDefinition = "json")
     private String metadata; // 촬영 장비, 해상도 등 JSON 데이터
 
-    @Column(nullable = false)
-    private Long likesCount;
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    private Long likesCount = 0L;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

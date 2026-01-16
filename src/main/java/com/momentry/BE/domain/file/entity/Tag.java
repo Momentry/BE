@@ -31,7 +31,7 @@ public class Tag {
     @Column(nullable = false, length = 50)
     private String tagName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "bigint default 0")
     private Long count = 0L;
 
     @Builder
