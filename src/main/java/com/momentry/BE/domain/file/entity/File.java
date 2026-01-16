@@ -1,6 +1,7 @@
 package com.momentry.BE.domain.file.entity;
 
 import com.momentry.BE.domain.album.entity.Album;
+import com.momentry.BE.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -22,6 +23,10 @@ public class File {
     @JoinColumn(name = "album_id", nullable = false)
     private Album album;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "uploader_id", nullable = false)
+    private User uploader;
+
     @Column(nullable = false)
     private String originUrl; // 원본 이미지 URL
 
@@ -39,22 +44,19 @@ public class File {
     @Column(nullable = false)
     private FileType fileType;
 
-    @Column(nullable = false)
-    private Long uploaderId; // 업로드한 사용자의 ID
-
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Builder
     public File(Album album, String originUrl, String thumbUrl, String displayUrl,
-                String metadata, FileType fileType, Long uploaderId, LocalDateTime createdAt) {
+                String metadata, FileType fileType, User uploader, LocalDateTime createdAt) {
         this.album = album;
         this.originUrl = originUrl;
         this.thumbUrl = thumbUrl;
         this.displayUrl = displayUrl;
         this.metadata = metadata;
         this.fileType = fileType;
-        this.uploaderId = uploaderId;
+        this.uploader = uploader;
         this.createdAt = (createdAt==null) ? LocalDateTime.now() : createdAt;
 
         this.likesCount = 0L; // 기본값은 0
