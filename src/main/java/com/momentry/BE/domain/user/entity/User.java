@@ -3,18 +3,17 @@ package com.momentry.BE.domain.user.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.util.Assert;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "users")
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
 
@@ -49,7 +48,7 @@ public class User {
     private LocalDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_plan_id", referencedColumnName = "id")
+    @JoinColumn(name = "account_plan_id", referencedColumnName = "id", nullable = false)
     private AccountPlan accountPlan;
 
     // 양방향 일대일 매핑
@@ -63,6 +62,11 @@ public class User {
     @Builder
     public User(String email, String username, String provider, String providerId,
                 String profileImageUrl, AccountPlan accountPlan) {
+        // 유효성 체크: 필수 값이 없으면 객체 생성 자체를 막음
+        Assert.hasText(email, "이메일은 필수 값입니다.");
+        Assert.hasText(username, "사용자 이름은 필수 값입니다.");
+        Assert.notNull(accountPlan, "구독 플랜은 필수 값입니다.");
+
         this.email = email;
         this.username = username;
         this.provider = provider;

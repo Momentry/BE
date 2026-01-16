@@ -2,10 +2,8 @@ package com.momentry.BE.domain.file.entity;
 
 import com.momentry.BE.domain.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.util.Assert;
 
 @Entity
 @Table(
@@ -18,6 +16,7 @@ import lombok.NoArgsConstructor;
         }
 )
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class FileLike {
 
@@ -35,6 +34,10 @@ public class FileLike {
 
     @Builder
     public FileLike(User user, File file){
+        // 유효성 체크: 필수 값이 없으면 객체 생성 자체를 막음
+        Assert.notNull(user, "사용자는 필수 값입니다.");
+        Assert.notNull(file, "파일은 필수 값입니다.");
+
         this.user = user;
         this.file = file;
     }
