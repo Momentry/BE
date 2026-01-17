@@ -1,9 +1,8 @@
 package com.momentry.BE.global.handler;
 
-import com.momentry.BE.global.error.ErrorResponse;
+import com.momentry.BE.global.dto.ApiResponse;
 import com.momentry.BE.global.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -20,10 +19,9 @@ public class GlobalExceptionHandler {
      * BusinessException을 상속받은 모든 커스텀 예외는 여기서 처리됩니다.
      */
     @ExceptionHandler(BusinessException.class)
-    protected ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
+    protected ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
         log.warn("BusinessException - Message: {}, Status: {}", e.getMessage(), e.getStatus());
-
-        return ResponseEntity.status(e.getStatus()).body(new ErrorResponse(e));
+        return ApiResponse.error(e.getStatus(), e.getMessage());
     }
 
     /**
@@ -31,14 +29,8 @@ public class GlobalExceptionHandler {
      * 위에서 걸러지지 않은 예상치 못한 런타임 예외(500 에러)를 처리합니다.
      */
     @ExceptionHandler(Exception.class)
-    protected ResponseEntity<ErrorResponse> handleException(Exception e) {
+    protected ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         log.error("Unhandled Exception: ", e);
-
-        ErrorResponse response = ErrorResponse.builder()
-                .message("서버 내부에서 알 수 없는 에러가 발생했습니다.")
-                .status(500)
-                .build();
-
-        return ResponseEntity.status(500).body(response);
+        return ApiResponse.error(500, "서버 내부에서 알 수 없는 에러가 발생했습니다.");
     }
 }
