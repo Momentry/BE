@@ -21,14 +21,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BusinessException.class)
     protected ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
-        log.error("BusinessException - Message: {}, Status: {}", e.getMessage(), e.getStatus());
+        log.warn("BusinessException - Message: {}, Status: {}", e.getMessage(), e.getStatus());
 
-        ErrorResponse response = ErrorResponse.builder()
-                .message(e.getMessage())
-                .status(e.getStatus())
-                .build();
-
-        return new ResponseEntity<>(response, HttpStatus.valueOf(e.getStatus()));
+        return ResponseEntity.status(e.getStatus()).body(new ErrorResponse(e));
     }
 
     /**
@@ -44,6 +39,6 @@ public class GlobalExceptionHandler {
                 .status(500)
                 .build();
 
-        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        return ResponseEntity.status(500).body(response);
     }
 }
