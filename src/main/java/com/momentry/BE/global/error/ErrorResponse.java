@@ -1,5 +1,6 @@
 package com.momentry.BE.global.error;
 
+import com.momentry.BE.global.exception.BusinessException;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -11,4 +12,9 @@ import lombok.Getter;
 public class ErrorResponse {
     private final int status;       // HTTP 상태 코드 (예: 400, 404, 500)
     private final String message;   // 에러의 원인을 설명하는 메시지
+
+    public ErrorResponse(BusinessException e){
+        this.status = e.getStatus();
+        this.message = e.getMessage();
+    }
 }

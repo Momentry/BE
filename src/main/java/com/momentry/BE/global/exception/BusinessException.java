@@ -20,4 +20,9 @@ public class BusinessException extends RuntimeException {
         super(message);
         this.status = status;
     }
+
+    @Override
+    public synchronized Throwable fillInStackTrace() {
+        return null;
+    }
 }
