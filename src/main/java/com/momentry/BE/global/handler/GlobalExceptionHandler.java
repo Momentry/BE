@@ -21,7 +21,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     protected ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
         log.warn("BusinessException - Message: {}, Status: {}", e.getMessage(), e.getStatus());
-        return ApiResponse.error(e.getStatus(), e.getMessage());
+        return ApiResponse.ofFail(e.getStatus(), e.getMessage());
     }
 
     /**
@@ -31,6 +31,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         log.error("Unhandled Exception: ", e);
-        return ApiResponse.error(500, "서버 내부에서 알 수 없는 에러가 발생했습니다.");
+        return ApiResponse.ofError(500, "서버 내부에서 알 수 없는 에러가 발생했습니다.");
     }
 }

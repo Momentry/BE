@@ -32,27 +32,32 @@ public class ApiResponse<T> {
     }
 
     // 성공 응답 (데이터가 있는 경우)
-    public static <T> ResponseEntity<ApiResponse<T>> success(T data){
+    public static <T> ResponseEntity<ApiResponse<T>> ofSuccess(T data){
         return ResponseEntity.ok(createResponse(200, "요청에 성공하였습니다.", "SUCCESS", data));
     }
 
     // 성공 응답 (데이터가 없는 경우)
-    public static <T> ResponseEntity<ApiResponse<T>> success(){
-        return ResponseEntity.ok(createResponse(200, "요청에 성공하였습니다.", "SUCCESS", null));
-    }
-
-    // 성공 응답 (Http 상태 코드를 커스텀하고, 데이터가 없는 경우)
-    public static <T> ResponseEntity<ApiResponse<T>> success(HttpStatus statusCode) {
-        return ResponseEntity.status(statusCode).body(createResponse(statusCode.value(), "요청에 성공하였습니다.", "SUCCESS", null));
+    public static <T> ResponseEntity<ApiResponse<T>> ofSuccess(){
+        return ofSuccess(null);
     }
 
     // 성공 응답 (Http 상태 코드를 커스텀하고, 데이터가 있는 경우)
-    public static <T> ResponseEntity<ApiResponse<T>> success(HttpStatus statusCode, T data) {
+    public static <T> ResponseEntity<ApiResponse<T>> ofSuccess(HttpStatus statusCode, T data) {
         return ResponseEntity.status(statusCode).body(createResponse(statusCode.value(), "요청에 성공하였습니다.", "SUCCESS", data));
     }
 
-    // 실패 응답
-    public static ResponseEntity<ApiResponse<Void>> error(int statusCode, String message){
+    // 성공 응답 (Http 상태 코드를 커스텀하고, 데이터가 없는 경우)
+    public static <T> ResponseEntity<ApiResponse<T>> ofSuccess(HttpStatus statusCode) {
+        return ofSuccess(statusCode, null);
+    }
+
+    // 요청 실패 응답 (4xx 계열)
+    public static ResponseEntity<ApiResponse<Void>> ofFail(int statusCode, String message) {
         return ResponseEntity.status(statusCode).body(createResponse(statusCode, message, "FAIL", null));
+    }
+
+    // 서버 에러 응답 (5xx 계열)
+    public static ResponseEntity<ApiResponse<Void>> ofError(int statusCode, String message){
+        return ResponseEntity.status(statusCode).body(createResponse(statusCode, message, "ERROR", null));
     }
 }
