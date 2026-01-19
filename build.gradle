@@ -10,7 +10,7 @@ description = 'Momentry - BE Spring Boot Project'
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
+		languageVersion = JavaLanguageVersion.of(21)
 	}
 }
 
