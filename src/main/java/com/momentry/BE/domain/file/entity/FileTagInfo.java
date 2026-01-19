@@ -1,8 +1,23 @@
 package com.momentry.BE.domain.file.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import org.springframework.util.Assert;
+
+import com.momentry.BE.domain.album.entity.AlbumTag;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
@@ -28,10 +43,10 @@ public class FileTagInfo {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tag_id", nullable = false)
-    private Tag tag;
+    private AlbumTag tag;
 
     @Builder
-    public FileTagInfo(File file, Tag tag){
+    public FileTagInfo(File file, AlbumTag tag){
         // 유효성 체크: 필수 값이 없으면 객체 생성 자체를 막음
         Assert.notNull(file, "파일은 필수 값입니다.");
         Assert.notNull(tag, "태그는 필수 값입니다.");

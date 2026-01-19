@@ -1,11 +1,13 @@
 package com.momentry.BE.global.dto;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 
 /**
@@ -34,6 +36,12 @@ public class ApiResponse<T> {
     // 성공 응답 (데이터가 있는 경우)
     public static <T> ResponseEntity<ApiResponse<T>> ofSuccess(T data){
         return ResponseEntity.ok(createResponse(200, "요청에 성공하였습니다.", "SUCCESS", data));
+    }
+
+    // 성공 응답 (헤더 포함, 데이터가 있는 경우)
+    public static <T> ResponseEntity<ApiResponse<T>> ofSuccess(HttpHeaders headers, T data){
+        return ResponseEntity.ok().headers(headers)
+                .body(createResponse(200, "요청에 성공하였습니다.", "SUCCESS", data));
     }
 
     // 성공 응답 (데이터가 없는 경우)
