@@ -103,7 +103,7 @@ public class AlbumService {
 
         AlbumTag tag = getTagByIdAndAlbumId(tagId, albumId);
 
-        fileTagInfoRepository.deleteByAlbumTag(tag);
+        fileTagInfoRepository.deleteByTag(tag);
         albumTagRepository.deleteById(tagId);
     }
 

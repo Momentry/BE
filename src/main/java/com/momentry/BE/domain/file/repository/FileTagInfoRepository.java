@@ -15,7 +15,7 @@ import com.momentry.BE.domain.file.entity.FileTagInfo;
 public interface FileTagInfoRepository extends JpaRepository<FileTagInfo, Long> {
     
     @Transactional
-    void deleteByAlbumTag(AlbumTag albumTag);
+    void deleteByTag(AlbumTag tag);
 
     @Query("""
             SELECT ft FROM FileTagInfo ft
