@@ -8,6 +8,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.function.Function;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import com.momentry.BE.domain.album.dto.AlbumTagResult;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.entity.AlbumMember;
 import com.momentry.BE.domain.album.entity.AlbumTag;
+import com.momentry.BE.domain.album.exception.DuplicateTagException;
 import com.momentry.BE.domain.album.exception.NoAlbumEditPermissionException;
 import com.momentry.BE.domain.album.exception.NoAlbumPermissionException;
 import com.momentry.BE.domain.album.exception.TagNotFoundException;
@@ -60,7 +62,11 @@ public class AlbumService {
                 .tagName(tagName)
                 .build();
 
-        albumTagRepository.save(tag);
+        try {
+            albumTagRepository.saveAndFlush(tag);
+        } catch (DataIntegrityViolationException e) {
+            throw new DuplicateTagException();
+        }
     }
 
     
