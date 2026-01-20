@@ -115,13 +115,14 @@ public class AlbumService {
 
     /**
      * 앨범 편집 권한 확인
-     * Viewer 이상의 권한을 가져야 함
+     * Editor 이상의 권한을 가져야 함 (사진/카테고리 관리)
      * 
-     * @implNote 권한이 VIEWER인 경우 NoAlbumEditPermissionException 예외를 발생시킴
+     * @implNote 권한이 EDITOR 미만(VIEWER 등)인 경우 NoAlbumEditPermissionException 예외를 발생시킴
      * @param permission 권한
      */
     private void requireEditPermission(String permission) {
-        if(permission.equals("VIEWER")) {
+        MemberAlbumPermission memberAlbumPermission = MemberAlbumPermission.valueOf(permission);
+        if (!memberAlbumPermission.canEditAlbum()) {
             throw new NoAlbumEditPermissionException();
         }
     }
