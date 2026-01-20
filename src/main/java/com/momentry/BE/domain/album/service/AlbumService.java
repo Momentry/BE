@@ -13,15 +13,25 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.momentry.BE.domain.album.dto.AlbumMemberInviteResult;
+import com.momentry.BE.domain.album.dto.InvitedMemberResult;
 import com.momentry.BE.domain.album.dto.AlbumTagResult;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.entity.AlbumMember;
+import com.momentry.BE.domain.album.entity.AlbumPermission;
 import com.momentry.BE.domain.album.entity.AlbumTag;
+import com.momentry.BE.domain.album.entity.MemberAlbumPermission;
+import com.momentry.BE.domain.album.exception.AlbumPermissionNotFoundException;
 import com.momentry.BE.domain.album.exception.DuplicateTagException;
+import com.momentry.BE.domain.album.exception.AlbumNotFoundException;
+import com.momentry.BE.domain.album.exception.InvalidAlbumInviteRequestException;
 import com.momentry.BE.domain.album.exception.NoAlbumEditPermissionException;
+import com.momentry.BE.domain.album.exception.NoAlbumMemberEditPermissionException;
 import com.momentry.BE.domain.album.exception.NoAlbumPermissionException;
 import com.momentry.BE.domain.album.exception.TagNotFoundException;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
+import com.momentry.BE.domain.album.repository.AlbumPermissionRepository;
+import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.repository.AlbumTagRepository;
 import com.momentry.BE.domain.file.dto.FilePageResult;
 import com.momentry.BE.domain.file.dto.FileResult;
@@ -29,6 +39,8 @@ import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileTagInfo;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import com.momentry.BE.domain.file.repository.FileTagInfoRepository;
+import com.momentry.BE.domain.user.entity.User;
+import com.momentry.BE.domain.user.repository.UserRepository;
 import com.momentry.BE.global.dto.FileCursor;
 import com.momentry.BE.global.exception.CursorDecodeFailException;
 
@@ -41,8 +53,11 @@ public class AlbumService {
     private final AlbumTagRepository albumTagRepository;
 
     private final AlbumMemberRepository albumMemberRepository;
+    private final AlbumRepository albumRepository;
+    private final AlbumPermissionRepository albumPermissionRepository;
     private final FileTagInfoRepository fileTagInfoRepository;
     private final FileRepository fileRepository;
+    private final UserRepository userRepository;
 
     /**
      * 앨범 태그 생성
@@ -69,7 +84,49 @@ public class AlbumService {
         }
     }
 
-    
+    /**
+     * 앨범 멤버 초대
+     *
+     * @param albumId 앨범 ID
+     * @param userIds 초대할 사용자 ID 목록
+     * @param userId  초대 요청자(현재 사용자) ID
+     * @return 초대 결과(앨범 ID, 초대된 사용자 목록)
+     */
+    @Transactional
+    public AlbumMemberInviteResult inviteMembers(Long albumId, List<Long> userIds, Long userId) {
+        Album album = getAlbum(albumId);
+        AlbumMember inviterMember = getAlbumPermission(albumId, userId);
+        AlbumPermission viewerPermission = getViewerPermission();
+
+        requireMemberEditPermission(inviterMember.getPermission().getPermission());
+
+        List<User> users = getInviteUsers(userIds);
+
+        List<InvitedMemberResult> invitedResults = new ArrayList<>();
+        for (User invitee : users) {
+            AlbumMember albumMember = AlbumMember.builder()
+                .user(invitee)
+                .album(album)
+                .permission(viewerPermission)
+                .build();
+
+            try {
+                albumMemberRepository.save(albumMember);
+            } catch (DataIntegrityViolationException e) {
+                throw new InvalidAlbumInviteRequestException();
+            }
+
+            invitedResults.add(new InvitedMemberResult(
+                invitee.getEmail(),
+                invitee.getId(),
+                invitee.getUsername(),
+                invitee.getProfileImageUrl()
+            ));
+        }
+
+        return new AlbumMemberInviteResult(album.getId(), invitedResults);
+    }
+
     /**
      * 앨범 권한만 가져오기
      * @param albumId 앨범 ID
@@ -79,6 +136,61 @@ public class AlbumService {
     private AlbumMember getAlbumPermission(Long albumId, Long userId) {
         return albumMemberRepository.findByAlbumIdAndUserId(albumId, userId)
                 .orElseThrow(NoAlbumPermissionException::new);
+    }
+
+    /**
+     * VIEWER 권한 객체 반환
+     *
+     * @implNote VIEWER 권한 객체를 찾을 수 없는 경우 AlbumPermissionNotFoundException 예외를 발생시킴
+     *
+     * @return AlbumPermission
+     */
+    private AlbumPermission getViewerPermission() {
+        return albumPermissionRepository.findByPermission(MemberAlbumPermission.VIEWER.name())
+                .orElseThrow(AlbumPermissionNotFoundException::new);
+    }
+
+    /**
+     * 멤버 편집 권한 확인
+     * Manager 이상의 권한을 가져야 함
+     *
+     * @implNote 권한이 MANAGER가 아닌 경우 NoAlbumMemberEditPermissionException 예외를 발생시킴
+     * @param permission 권한
+     */
+    private void requireMemberEditPermission(String permission) {
+        MemberAlbumPermission memberAlbumPermission = MemberAlbumPermission.valueOf(permission);
+        if (!memberAlbumPermission.canManageMembers()) {
+            throw new NoAlbumMemberEditPermissionException();
+        }
+    }
+
+    /**
+     * 앨범 ID로 앨범을 조회
+     *
+     * @implNote 앨범을 찾을 수 없는 경우 AlbumNotFoundException 예외를 발생시킴
+     *
+     * @param albumId 앨범 ID
+     * @return Album
+     */
+    private Album getAlbum(Long albumId) {
+        return albumRepository.findById(albumId)
+                .orElseThrow(AlbumNotFoundException::new);
+    }
+
+    /**
+     * 초대 대상 사용자 목록을 조회
+     * 
+     * @implNote 일부라도 존재하지 않으면 InvalidAlbumInviteRequestException 예외를 발생시킴
+     *
+     * @param userIds 초대할 사용자 ID 목록
+     * @return 사용자 엔티티 목록
+     */
+    private List<User> getInviteUsers(List<Long> userIds) {
+        List<User> users = userRepository.findAllById(userIds);
+        if (users.size() != userIds.size()) {
+            throw new InvalidAlbumInviteRequestException();
+        }
+        return users;
     }
 
     /**
