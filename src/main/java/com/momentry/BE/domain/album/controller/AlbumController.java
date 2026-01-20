@@ -22,6 +22,7 @@ import jakarta.validation.constraints.NotNull;
 import com.momentry.BE.domain.album.dto.AlbumMemberInviteRequest;
 import com.momentry.BE.domain.album.dto.AlbumMemberInviteResult;
 import com.momentry.BE.domain.album.dto.AlbumTagResult;
+import com.momentry.BE.domain.album.dto.AlbumMemberPermissionUpdateRequest;
 import com.momentry.BE.domain.album.dto.TagCreationRequest;
 import com.momentry.BE.domain.album.dto.TagUpdateRequest;
 import com.momentry.BE.domain.album.service.AlbumService;
@@ -97,5 +98,15 @@ public class AlbumController {
             @NotNull Long userId) {
         AlbumMemberInviteResult result = albumService.inviteMembers(albumId, request.getUserIds(), userId);
         return ApiResponse.ofSuccess(HttpStatus.CREATED, result);
+    }
+
+    @PatchMapping("/{albumId}/members/{memberId}")
+    public ResponseEntity<ApiResponse<Object>> updateMemberPermission(
+            @PathVariable Long albumId,
+            @PathVariable Long memberId,
+            @RequestBody AlbumMemberPermissionUpdateRequest request,
+            Long userId) {
+        albumService.updateMemberPermission(albumId, memberId, request.getPermission(), userId);
+        return ApiResponse.ofSuccess();
     }
 }

@@ -29,6 +29,7 @@ import com.momentry.BE.domain.album.exception.NoAlbumEditPermissionException;
 import com.momentry.BE.domain.album.exception.NoAlbumMemberEditPermissionException;
 import com.momentry.BE.domain.album.exception.NoAlbumPermissionException;
 import com.momentry.BE.domain.album.exception.TagNotFoundException;
+import com.momentry.BE.domain.album.exception.AlbumMemberNotFoundException;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
 import com.momentry.BE.domain.album.repository.AlbumPermissionRepository;
 import com.momentry.BE.domain.album.repository.AlbumRepository;
@@ -203,7 +204,54 @@ public class AlbumService {
         return albumMemberRepository.findByAlbumIdAndUserIdWithAlbum(albumId, userId)
                 .orElseThrow(NoAlbumPermissionException::new);
     }
-    
+
+    /**
+     * 앨범 멤버 권한 변경
+     *
+     * @param albumId   앨범 ID
+     * @param memberId  권한을 변경할 멤버(사용자) ID
+     * @param permission 부여할 권한 종류 (manager, editor, viewer)
+     * @param userId    요청자(현재 사용자) ID
+     */
+    @Transactional
+    public void updateMemberPermission(Long albumId, Long memberId, String permission, Long userId) {
+        AlbumMember requester = getAlbumPermission(albumId, userId);
+        requireMemberEditPermission(requester.getPermission().getPermission());
+
+        AlbumMember targetMember = getAlbumMember(albumId, memberId);
+        AlbumPermission targetPermission = getPermission(permission);
+
+        targetMember.changePermission(targetPermission);
+    }
+
+    /**
+     * 권한 문자열로 권한 객체 반환
+     *
+     * @implNote 권한 객체를 찾을 수 없는 경우 AlbumPermissionNotFoundException 예외를 발생시킴
+     *
+     * @param permission 권한 문자열 (manager, editor, viewer)
+     * @return AlbumPermission
+     */
+    private AlbumPermission getPermission(String permission) {
+        MemberAlbumPermission permissionEnum = MemberAlbumPermission.valueOf(permission.toUpperCase());
+        return albumPermissionRepository.findByPermission(permissionEnum.name())
+            .orElseThrow(AlbumPermissionNotFoundException::new);
+    }
+
+    /**
+     * 앨범의 특정 멤버 조회
+     *
+     * @implNote 멤버를 찾을 수 없는 경우 AlbumMemberNotFoundException 예외를 발생시킴
+     *
+     * @param albumId 앨범 ID
+     * @param memberId 멤버(사용자) ID
+     * @return AlbumMember
+     */
+    private AlbumMember getAlbumMember(Long albumId, Long memberId) {
+        return albumMemberRepository.findByAlbumIdAndUserId(albumId, memberId)
+            .orElseThrow(AlbumMemberNotFoundException::new);
+    }
+
     /**
      * 앨범의 태그를 삭제
      * 

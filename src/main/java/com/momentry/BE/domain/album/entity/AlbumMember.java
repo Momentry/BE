@@ -47,4 +47,9 @@ public class AlbumMember {
         this.album = album;
         this.permission = permission;
     }
+
+    public void changePermission(AlbumPermission permission) {
+        Assert.notNull(permission, "권한 정보는 필수 값입니다.");
+        this.permission = permission;
+    }
 }
