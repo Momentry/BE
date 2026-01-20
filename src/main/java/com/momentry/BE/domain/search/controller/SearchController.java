@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.momentry.BE.domain.user.dto.UserSearchResult;
 import com.momentry.BE.domain.album.dto.AlbumTagDetailResult;
 import com.momentry.BE.domain.search.service.SearchService;
 import com.momentry.BE.global.dto.ApiResponse;
@@ -25,5 +26,11 @@ public class SearchController {
     public ResponseEntity<ApiResponse<List<AlbumTagDetailResult>>> searchTags(@RequestParam String tagName) {
         List<AlbumTagDetailResult> tags = searchService.searchByTagName(tagName);
         return ApiResponse.ofSuccess(tags);
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<ApiResponse<List<UserSearchResult>>> searchUsers(@RequestParam String keyword) {
+        List<UserSearchResult> users = searchService.searchUsersByKeyword(keyword);
+        return ApiResponse.ofSuccess(users);
     }
 }
