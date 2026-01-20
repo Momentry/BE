@@ -97,7 +97,7 @@ public class AlbumService {
     public AlbumMemberInviteResult inviteMembers(Long albumId, List<Long> userIds, Long userId) {
         Album album = getAlbum(albumId);
         AlbumMember inviterMember = getAlbumPermission(albumId, userId);
-        AlbumPermission viewerPermission = getViewerPermission();
+        AlbumPermission viewerPermission = getPermission(MemberAlbumPermission.VIEWER.name());
 
         requireMemberEditPermission(inviterMember.getPermission().getPermission());
 
@@ -137,18 +137,6 @@ public class AlbumService {
     private AlbumMember getAlbumPermission(Long albumId, Long userId) {
         return albumMemberRepository.findByAlbumIdAndUserId(albumId, userId)
                 .orElseThrow(NoAlbumPermissionException::new);
-    }
-
-    /**
-     * VIEWER 권한 객체 반환
-     *
-     * @implNote VIEWER 권한 객체를 찾을 수 없는 경우 AlbumPermissionNotFoundException 예외를 발생시킴
-     *
-     * @return AlbumPermission
-     */
-    private AlbumPermission getViewerPermission() {
-        return albumPermissionRepository.findByPermission(MemberAlbumPermission.VIEWER.name())
-                .orElseThrow(AlbumPermissionNotFoundException::new);
     }
 
     /**
