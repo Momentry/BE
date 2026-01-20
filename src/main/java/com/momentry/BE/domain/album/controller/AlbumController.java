@@ -109,4 +109,13 @@ public class AlbumController {
         albumService.updateMemberPermission(albumId, memberId, request.getPermission(), userId);
         return ApiResponse.ofSuccess();
     }
+
+    @DeleteMapping("/{albumId}/members/{memberId}")
+    public ResponseEntity<ApiResponse<Object>> removeMember(
+            @PathVariable Long albumId,
+            @PathVariable Long memberId,
+            Long userId) {
+        albumService.removeMember(albumId, memberId, userId);
+        return ApiResponse.ofSuccess();
+    }
 }

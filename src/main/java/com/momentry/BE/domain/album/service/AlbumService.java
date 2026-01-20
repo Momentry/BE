@@ -253,6 +253,23 @@ public class AlbumService {
     }
 
     /**
+     * 앨범 멤버 강퇴
+     *
+     * @param albumId  앨범 ID
+     * @param memberId 강퇴시킬 멤버(사용자) ID
+     * @param userId   요청자(현재 사용자) ID
+     */
+    @Transactional
+    public void removeMember(Long albumId, Long memberId, Long userId) {
+        AlbumMember requester = getAlbumPermission(albumId, userId);
+        requireMemberEditPermission(requester.getPermission().getPermission());
+
+        AlbumMember targetMember = getAlbumMember(albumId, memberId);
+
+        albumMemberRepository.delete(targetMember);
+    }
+
+    /**
      * 앨범의 태그를 삭제
      * 
      * @param albumId 앨범 ID
