@@ -13,16 +13,23 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.momentry.BE.domain.album.dto.AlbumCreationResponse;
 import com.momentry.BE.domain.album.dto.AlbumTagResult;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.entity.AlbumMember;
+import com.momentry.BE.domain.album.entity.AlbumPermission;
 import com.momentry.BE.domain.album.entity.AlbumTag;
+import com.momentry.BE.domain.album.exception.DuplicateAlbumNameException;
 import com.momentry.BE.domain.album.exception.DuplicateTagException;
 import com.momentry.BE.domain.album.exception.NoAlbumEditPermissionException;
 import com.momentry.BE.domain.album.exception.NoAlbumPermissionException;
 import com.momentry.BE.domain.album.exception.TagNotFoundException;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
+import com.momentry.BE.domain.album.repository.AlbumPermissionRepository;
+import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.repository.AlbumTagRepository;
+import com.momentry.BE.domain.user.entity.User;
+import com.momentry.BE.domain.user.repository.UserRepository;
 import com.momentry.BE.domain.file.dto.FilePageResult;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.entity.File;
@@ -37,19 +44,72 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class AlbumService {
-    
-    private final AlbumTagRepository albumTagRepository;
 
+    private final AlbumRepository albumRepository;
+    private final AlbumTagRepository albumTagRepository;
     private final AlbumMemberRepository albumMemberRepository;
+    private final AlbumPermissionRepository albumPermissionRepository;
     private final FileTagInfoRepository fileTagInfoRepository;
     private final FileRepository fileRepository;
+    private final UserRepository userRepository;
+
+    // 나중에 s3에서 가져오도록 변경 필요
+    private static final String DEFAULT_COVER_IMAGE_URL = "https://images.unsplash.com/photo-1511497584788-876760111969?w=800";
+
+    /**
+     * 앨범 생성
+     * 
+     * @param albumName     앨범 이름
+     * @param coverImageUrl 커버 이미지 URL (null이면 default 이미지 사용)
+     * @param userId        사용자 ID (앨범 생성자)
+     * @return 앨범 생성 응답
+     */
+    @Transactional
+    public AlbumCreationResponse createAlbum(String albumName, String coverImageUrl, Long userId) {
+        // 앨범 이름 중복 체크
+        if (albumRepository.findByName(albumName).isPresent()) {
+            throw new DuplicateAlbumNameException();
+        }
+
+        // 사용자 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // 커버 이미지 URL 설정 (없으면 default 이미지 사용)
+        String finalCoverImageUrl = (coverImageUrl != null && !coverImageUrl.isBlank())
+                ? coverImageUrl
+                : DEFAULT_COVER_IMAGE_URL;
+
+        // 앨범 생성
+        Album album = Album.builder()
+                .name(albumName)
+                .coverImageUrl(finalCoverImageUrl)
+                .build();
+
+        Album savedAlbum = albumRepository.save(album);
+
+        // 추후 MemberAlbumPermission enum 적용 예정
+        // MANAGER 권한 조회 (ID 1 = MANAGER)
+        AlbumPermission managerPermission = albumPermissionRepository.getReferenceById(1L);
+
+        // 앨범 멤버 생성 (생성자는 MANAGER 권한)
+        AlbumMember albumMember = AlbumMember.builder()
+                .user(user)
+                .album(savedAlbum)
+                .permission(managerPermission)
+                .build();
+
+        albumMemberRepository.save(albumMember);
+
+        return new AlbumCreationResponse(savedAlbum.getId(), savedAlbum.getName());
+    }
 
     /**
      * 앨범 태그 생성
      * 
      * @param albumId 앨범 ID
      * @param tagName 태그 이름
-     * @param userId 사용자 ID
+     * @param userId  사용자 ID
      */
     @Transactional
     public void createTag(Long albumId, String tagName, Long userId) {
@@ -69,11 +129,11 @@ public class AlbumService {
         }
     }
 
-    
     /**
      * 앨범 권한만 가져오기
+     * 
      * @param albumId 앨범 ID
-     * @param userId 사용자 ID
+     * @param userId  사용자 ID
      * @return AlbumMember
      */
     private AlbumMember getAlbumPermission(Long albumId, Long userId) {
@@ -83,27 +143,27 @@ public class AlbumService {
 
     /**
      * 앨범 권한을 가져오고 앨범을 함께 반환 (fetch join)
+     * 
      * @param albumId 앨범 ID
-     * @param userId 사용자 ID
+     * @param userId  사용자 ID
      * @return AlbumMember
      */
     private AlbumMember getAlbumPermissionWithAlbum(Long albumId, Long userId) {
         return albumMemberRepository.findByAlbumIdAndUserIdWithAlbum(albumId, userId)
                 .orElseThrow(NoAlbumPermissionException::new);
     }
-    
+
     /**
      * 앨범의 태그를 삭제
      * 
      * @param albumId 앨범 ID
-     * @param tagId 태그 ID
-     * @param userId 사용자 ID
+     * @param tagId   태그 ID
+     * @param userId  사용자 ID
      */
     @Transactional
     public void deleteTag(Long albumId, Long tagId, Long userId) {
 
         AlbumMember albumMember = getAlbumPermission(albumId, userId);
-        
 
         requireEditPermission(albumMember.getPermission().getPermission());
 
@@ -121,7 +181,7 @@ public class AlbumService {
      * @param permission 권한
      */
     private void requireEditPermission(String permission) {
-        if(permission.equals("VIEWER")) {
+        if (permission.equals("VIEWER")) {
             throw new NoAlbumEditPermissionException();
         }
     }
@@ -130,9 +190,9 @@ public class AlbumService {
      * 앨범의 태그를 업데이트
      * 
      * @param albumId 앨범 ID
-     * @param tagId 태그 ID
+     * @param tagId   태그 ID
      * @param tagName 태그 이름
-     * @param userId 사용자 ID
+     * @param userId  사용자 ID
      */
     @Transactional
     public void updateTag(Long albumId, Long tagId, String tagName, Long userId) {
@@ -152,7 +212,7 @@ public class AlbumService {
      * 앨범의 태그 목록을 조회
      * 
      * @param albumId 앨범 ID
-     * @param userId 사용자 ID
+     * @param userId  사용자 ID
      * @return 태그 목록
      */
     public List<AlbumTagResult> getTags(Long albumId, Long userId) {
@@ -171,10 +231,10 @@ public class AlbumService {
      * 앨범의 파일 목록을 조회
      * 
      * @param albumId 앨범 ID
-     * @param tagId 태그 ID
-     * @param cursor 커서
-     * @param size 페이지 크기
-     * @param userId 사용자 ID
+     * @param tagId   태그 ID
+     * @param cursor  커서
+     * @param size    페이지 크기
+     * @param userId  사용자 ID
      * @return 파일 페이지 결과
      */
     public FilePageResult getFiles(Long albumId, Long tagId, String cursor, int size, Long userId) {
@@ -187,7 +247,8 @@ public class AlbumService {
         if (tagId != null) {
             getTagByIdAndAlbumId(tagId, albumId);
             List<FileTagInfo> fileTagInfos = fetchTagInfosByTag(tagId, decodedCursor, pageable);
-            return toPageResult(fileTagInfos, pageSize, info -> FileResult.of(info.getFile()), info -> info.getFile().getCreatedAt(), info -> info.getFile().getId());
+            return toPageResult(fileTagInfos, pageSize, info -> FileResult.of(info.getFile()),
+                    info -> info.getFile().getCreatedAt(), info -> info.getFile().getId());
         }
 
         List<File> files = fetchFilesByAlbum(albumMember.getAlbum(), decodedCursor, pageable);
@@ -205,8 +266,8 @@ public class AlbumService {
     /**
      * 앨범의 파일 목록을 조회
      * 
-     * @param album 앨범
-     * @param cursor 커서
+     * @param album    앨범
+     * @param cursor   커서
      * @param pageable 페이지 요청
      * @return 파일 목록
      */
@@ -226,17 +287,17 @@ public class AlbumService {
      * 파일 목록을 페이지 결과로 변환
      * 
      * 
-     * @param items 파일 목록
-     * @param pageSize 페이지 크기
-     * @param mapper 파일 매퍼
+     * @param items              파일 목록
+     * @param pageSize           페이지 크기
+     * @param mapper             파일 매퍼
      * @param createdAtExtractor 생성 시간 추출기
-     * @param idExtractor ID 추출기
+     * @param idExtractor        ID 추출기
      * @return 파일 페이지 결과
      */
     private <T> FilePageResult toPageResult(List<T> items,
-                                            int pageSize,
-                                            Function<T, FileResult> mapper,
-                                            Function<T, LocalDateTime> createdAtExtractor,
+            int pageSize,
+            Function<T, FileResult> mapper,
+            Function<T, LocalDateTime> createdAtExtractor,
             Function<T, Long> idExtractor) {
         boolean hasNext = items.size() > pageSize;
         if (hasNext) {
@@ -286,7 +347,7 @@ public class AlbumService {
      * Cursor 객체를 base64 인코딩하여 문자열로 반환
      * 
      * @param createdAt 생성 시간
-     * @param id ID
+     * @param id        ID
      * @return 인코딩된 문자열
      */
     private String encodeCursor(LocalDateTime createdAt, Long id) {

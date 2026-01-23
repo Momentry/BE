@@ -50,3 +50,7 @@ Desktop.ini
 ### Env ###
 .env
 .env.*
+
+### Security Config (개발 중) ###
+src/main/java/com/momentry/BE/global/config/SecurityConfig.java
+
