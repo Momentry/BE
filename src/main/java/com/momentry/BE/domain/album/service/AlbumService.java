@@ -18,10 +18,8 @@ import com.momentry.BE.domain.album.dto.InvitedMemberResult;
 import com.momentry.BE.domain.album.dto.AlbumTagResult;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.entity.AlbumMember;
-import com.momentry.BE.domain.album.entity.AlbumPermission;
 import com.momentry.BE.domain.album.entity.AlbumTag;
 import com.momentry.BE.domain.album.entity.MemberAlbumPermission;
-import com.momentry.BE.domain.album.exception.AlbumPermissionNotFoundException;
 import com.momentry.BE.domain.album.exception.CannotKickManagerException;
 import com.momentry.BE.domain.album.exception.DuplicateTagException;
 import com.momentry.BE.domain.album.exception.AlbumNotFoundException;
@@ -32,7 +30,6 @@ import com.momentry.BE.domain.album.exception.NoAlbumPermissionException;
 import com.momentry.BE.domain.album.exception.TagNotFoundException;
 import com.momentry.BE.domain.album.exception.AlbumMemberNotFoundException;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
-import com.momentry.BE.domain.album.repository.AlbumPermissionRepository;
 import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.repository.AlbumTagRepository;
 import com.momentry.BE.domain.file.dto.FilePageResult;
@@ -56,7 +53,6 @@ public class AlbumService {
 
     private final AlbumMemberRepository albumMemberRepository;
     private final AlbumRepository albumRepository;
-    private final AlbumPermissionRepository albumPermissionRepository;
     private final FileTagInfoRepository fileTagInfoRepository;
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
@@ -72,7 +68,7 @@ public class AlbumService {
     public void createTag(Long albumId, String tagName, Long userId) {
         AlbumMember albumMember = getAlbumPermissionWithAlbum(albumId, userId);
 
-        requireEditPermission(albumMember.getPermission().getPermission());
+        requireEditPermission(albumMember.getPermission());
 
         AlbumTag tag = AlbumTag.builder()
                 .album(albumMember.getAlbum())
@@ -98,9 +94,8 @@ public class AlbumService {
     public AlbumMemberInviteResult inviteMembers(Long albumId, List<Long> userIds, Long userId) {
         Album album = getAlbum(albumId);
         AlbumMember inviterMember = getAlbumPermission(albumId, userId);
-        AlbumPermission viewerPermission = getPermission(MemberAlbumPermission.VIEWER.name());
 
-        requireMemberEditPermission(inviterMember.getPermission().getPermission());
+        requireMemberEditPermission(inviterMember.getPermission());
 
         List<User> users = getInviteUsers(userIds);
 
@@ -109,7 +104,7 @@ public class AlbumService {
             AlbumMember albumMember = AlbumMember.builder()
                 .user(invitee)
                 .album(album)
-                .permission(viewerPermission)
+                .permission(MemberAlbumPermission.VIEWER)
                 .build();
 
             try {
@@ -147,9 +142,8 @@ public class AlbumService {
      * @implNote 권한이 MANAGER가 아닌 경우 NoAlbumMemberEditPermissionException 예외를 발생시킴
      * @param permission 권한
      */
-    private void requireMemberEditPermission(String permission) {
-        MemberAlbumPermission memberAlbumPermission = MemberAlbumPermission.valueOf(permission);
-        if (!memberAlbumPermission.canManageMembers()) {
+    private void requireMemberEditPermission(MemberAlbumPermission permission) {
+        if (!permission.canManageMembers()) {
             throw new NoAlbumMemberEditPermissionException();
         }
     }
@@ -162,10 +156,10 @@ public class AlbumService {
      * @param targetMember 강퇴 대상 멤버
      */
     private void preventManagerKickingManager(AlbumMember requester, AlbumMember targetMember) {
-        String requesterPermission = requester.getPermission().getPermission();
-        String targetPermission = targetMember.getPermission().getPermission();
-        if (MemberAlbumPermission.valueOf(requesterPermission) == MemberAlbumPermission.MANAGER
-                && MemberAlbumPermission.valueOf(targetPermission) == MemberAlbumPermission.MANAGER) {
+        MemberAlbumPermission requesterPermission = requester.getPermission();
+        MemberAlbumPermission targetPermission = targetMember.getPermission();
+        if (requesterPermission == MemberAlbumPermission.MANAGER
+                && targetPermission == MemberAlbumPermission.MANAGER) {
             throw new CannotKickManagerException();
         }
     }
@@ -221,26 +215,12 @@ public class AlbumService {
     @Transactional
     public void updateMemberPermission(Long albumId, Long memberId, String permission, Long userId) {
         AlbumMember requester = getAlbumPermission(albumId, userId);
-        requireMemberEditPermission(requester.getPermission().getPermission());
+        requireMemberEditPermission(requester.getPermission());
 
         AlbumMember targetMember = getAlbumMember(albumId, memberId);
-        AlbumPermission targetPermission = getPermission(permission);
+        MemberAlbumPermission targetPermission = MemberAlbumPermission.valueOf(permission.toUpperCase());
 
         targetMember.changePermission(targetPermission);
-    }
-
-    /**
-     * 권한 문자열로 권한 객체 반환
-     *
-     * @implNote 권한 객체를 찾을 수 없는 경우 AlbumPermissionNotFoundException 예외를 발생시킴
-     *
-     * @param permission 권한 문자열 (manager, editor, viewer)
-     * @return AlbumPermission
-     */
-    private AlbumPermission getPermission(String permission) {
-        MemberAlbumPermission permissionEnum = MemberAlbumPermission.valueOf(permission.toUpperCase());
-        return albumPermissionRepository.findByPermission(permissionEnum.name())
-            .orElseThrow(AlbumPermissionNotFoundException::new);
     }
 
     /**
@@ -267,7 +247,7 @@ public class AlbumService {
     @Transactional
     public void kickMember(Long albumId, Long memberId, Long userId) {
         AlbumMember requester = getAlbumPermission(albumId, userId);
-        requireMemberEditPermission(requester.getPermission().getPermission());
+        requireMemberEditPermission(requester.getPermission());
 
         AlbumMember targetMember = getAlbumMember(albumId, memberId);
         preventManagerKickingManager(requester, targetMember);
@@ -288,7 +268,7 @@ public class AlbumService {
         AlbumMember albumMember = getAlbumPermission(albumId, userId);
         
 
-        requireEditPermission(albumMember.getPermission().getPermission());
+        requireEditPermission(albumMember.getPermission());
 
         AlbumTag tag = getTagByIdAndAlbumId(tagId, albumId);
 
@@ -303,9 +283,8 @@ public class AlbumService {
      * @implNote 권한이 EDITOR 미만(VIEWER 등)인 경우 NoAlbumEditPermissionException 예외를 발생시킴
      * @param permission 권한
      */
-    private void requireEditPermission(String permission) {
-        MemberAlbumPermission memberAlbumPermission = MemberAlbumPermission.valueOf(permission);
-        if (!memberAlbumPermission.canEditAlbum()) {
+    private void requireEditPermission(MemberAlbumPermission permission) {
+        if (!permission.canEditAlbum()) {
             throw new NoAlbumEditPermissionException();
         }
     }
@@ -323,7 +302,7 @@ public class AlbumService {
 
         AlbumMember albumMember = getAlbumPermission(albumId, userId);
 
-        requireEditPermission(albumMember.getPermission().getPermission());
+        requireEditPermission(albumMember.getPermission());
 
         AlbumTag tag = getTagByIdAndAlbumId(tagId, albumId);
 

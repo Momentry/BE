@@ -30,8 +30,8 @@ import com.momentry.BE.domain.album.dto.AlbumMemberInviteResult;
 import com.momentry.BE.domain.album.dto.AlbumTagResult;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.entity.AlbumMember;
-import com.momentry.BE.domain.album.entity.AlbumPermission;
 import com.momentry.BE.domain.album.entity.AlbumTag;
+import com.momentry.BE.domain.album.entity.MemberAlbumPermission;
 import com.momentry.BE.domain.album.exception.AlbumMemberNotFoundException;
 import com.momentry.BE.domain.album.exception.AlbumNotFoundException;
 import com.momentry.BE.domain.album.exception.CannotKickManagerException;
@@ -41,7 +41,6 @@ import com.momentry.BE.domain.album.exception.NoAlbumMemberEditPermissionExcepti
 import com.momentry.BE.domain.album.exception.NoAlbumPermissionException;
 import com.momentry.BE.domain.album.exception.TagNotFoundException;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
-import com.momentry.BE.domain.album.repository.AlbumPermissionRepository;
 import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.repository.AlbumTagRepository;
 import com.momentry.BE.domain.file.dto.FilePageResult;
@@ -75,21 +74,17 @@ class AlbumServiceTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
-    private AlbumPermissionRepository albumPermissionRepository;
-
     private AlbumService albumService;
     private Album album;
     private AlbumMember albumMember;
 
     @BeforeEach
     void setUp() {
-        albumService = new AlbumService(albumTagRepository, albumMemberRepository, albumRepository, albumPermissionRepository, fileTagInfoRepository, fileRepository, userRepository);
+        albumService = new AlbumService(albumTagRepository, albumMemberRepository, albumRepository, fileTagInfoRepository, fileRepository, userRepository);
         album = Album.builder().name("test").build();
-        AlbumPermission permission = AlbumPermission.builder().permission("EDITOR").build();
         AccountPlan plan = AccountPlan.builder().plan("FREE").build();
         User user = User.builder().email("a@b.com").username("user").accountPlan(plan).build();
-        albumMember = AlbumMember.builder().album(album).user(user).permission(permission).build();
+        albumMember = AlbumMember.builder().album(album).user(user).permission(MemberAlbumPermission.EDITOR).build();
     }
 
     @Test
@@ -217,13 +212,12 @@ class AlbumServiceTest {
         Long requesterId = 10L;
         List<Long> inviteeIds = List.of(20L, 30L);
 
-        AlbumPermission managerPermission = AlbumPermission.builder().permission("MANAGER").build();
         User managerUser = User.builder().email("manager@test.com").username("manager").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(managerUser, "id", requesterId);
         AlbumMember managerMember = AlbumMember.builder()
                 .album(album)
                 .user(managerUser)
-                .permission(managerPermission)
+                .permission(MemberAlbumPermission.MANAGER)
                 .build();
 
         ReflectionTestUtils.setField(album, "id", albumId);
@@ -244,13 +238,9 @@ class AlbumServiceTest {
                 .build();
         ReflectionTestUtils.setField(invitee2, "id", 30L);
 
-        AlbumPermission viewerPermission = AlbumPermission.builder().permission("VIEWER").build();
-
         when(albumRepository.findById(albumId)).thenReturn(Optional.of(album));
         when(albumMemberRepository.findByAlbumIdAndUserId(albumId, requesterId))
                 .thenReturn(Optional.of(managerMember));
-        when(albumPermissionRepository.findByPermission("VIEWER"))
-                .thenReturn(Optional.of(viewerPermission));
         when(userRepository.findAllById(inviteeIds))
                 .thenReturn(List.of(invitee1, invitee2));
 
@@ -270,9 +260,9 @@ class AlbumServiceTest {
         List<AlbumMember> capturedMembers = memberCaptor.getAllValues();
         assertThat(capturedMembers).hasSize(2);
         assertThat(capturedMembers.get(0).getAlbum()).isEqualTo(album);
-        assertThat(capturedMembers.get(0).getPermission().getPermission()).isEqualTo("VIEWER");
+        assertThat(capturedMembers.get(0).getPermission()).isEqualTo(MemberAlbumPermission.VIEWER);
         assertThat(capturedMembers.get(1).getAlbum()).isEqualTo(album);
-        assertThat(capturedMembers.get(1).getPermission().getPermission()).isEqualTo("VIEWER");
+        assertThat(capturedMembers.get(1).getPermission()).isEqualTo(MemberAlbumPermission.VIEWER);
     }
 
     @Test
@@ -283,24 +273,19 @@ class AlbumServiceTest {
         Long requesterId = 10L;
         List<Long> inviteeIds = List.of(20L);
 
-        AlbumPermission editorPermission = AlbumPermission.builder().permission("EDITOR").build();
         User editorUser = User.builder().email("editor@test.com").username("editor").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(editorUser, "id", requesterId);
         AlbumMember editorMember = AlbumMember.builder()
                 .album(album)
                 .user(editorUser)
-                .permission(editorPermission)
+                .permission(MemberAlbumPermission.EDITOR)
                 .build();
-
-        AlbumPermission viewerPermission = AlbumPermission.builder().permission("VIEWER").build();
 
         ReflectionTestUtils.setField(album, "id", albumId);
 
         when(albumRepository.findById(albumId)).thenReturn(Optional.of(album));
         when(albumMemberRepository.findByAlbumIdAndUserId(albumId, requesterId))
                 .thenReturn(Optional.of(editorMember));
-        when(albumPermissionRepository.findByPermission("VIEWER"))
-                .thenReturn(Optional.of(viewerPermission));
 
         // when & then
         assertThatThrownBy(() -> albumService.inviteMembers(albumId, inviteeIds, requesterId))
@@ -316,15 +301,12 @@ class AlbumServiceTest {
         List<Long> inviteeIds = List.of(20L);
 
         AlbumMember viewerMember = memberWithPermission("VIEWER");
-        AlbumPermission viewerPermission = AlbumPermission.builder().permission("VIEWER").build();
 
         ReflectionTestUtils.setField(album, "id", albumId);
 
         when(albumRepository.findById(albumId)).thenReturn(Optional.of(album));
         when(albumMemberRepository.findByAlbumIdAndUserId(albumId, requesterId))
                 .thenReturn(Optional.of(viewerMember));
-        when(albumPermissionRepository.findByPermission("VIEWER"))
-                .thenReturn(Optional.of(viewerPermission));
 
         // when & then
         assertThatThrownBy(() -> albumService.inviteMembers(albumId, inviteeIds, requesterId))
@@ -354,24 +336,19 @@ class AlbumServiceTest {
         Long requesterId = 10L;
         List<Long> inviteeIds = List.of(999L);
 
-        AlbumPermission managerPermission = AlbumPermission.builder().permission("MANAGER").build();
         User managerUser = User.builder().email("manager@test.com").username("manager").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(managerUser, "id", requesterId);
         AlbumMember managerMember = AlbumMember.builder()
                 .album(album)
                 .user(managerUser)
-                .permission(managerPermission)
+                .permission(MemberAlbumPermission.MANAGER)
                 .build();
-
-        AlbumPermission viewerPermission = AlbumPermission.builder().permission("VIEWER").build();
 
         ReflectionTestUtils.setField(album, "id", albumId);
 
         when(albumRepository.findById(albumId)).thenReturn(Optional.of(album));
         when(albumMemberRepository.findByAlbumIdAndUserId(albumId, requesterId))
                 .thenReturn(Optional.of(managerMember));
-        when(albumPermissionRepository.findByPermission("VIEWER"))
-                .thenReturn(Optional.of(viewerPermission));
         when(userRepository.findAllById(inviteeIds))
                 .thenReturn(new ArrayList<>());
 
@@ -389,13 +366,12 @@ class AlbumServiceTest {
         Long inviteeId = 20L;
         List<Long> inviteeIds = List.of(inviteeId);
 
-        AlbumPermission managerPermission = AlbumPermission.builder().permission("MANAGER").build();
         User managerUser = User.builder().email("manager@test.com").username("manager").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(managerUser, "id", requesterId);
         AlbumMember managerMember = AlbumMember.builder()
                 .album(album)
                 .user(managerUser)
-                .permission(managerPermission)
+                .permission(MemberAlbumPermission.MANAGER)
                 .build();
 
         User invitee = User.builder()
@@ -405,15 +381,11 @@ class AlbumServiceTest {
                 .build();
         ReflectionTestUtils.setField(invitee, "id", inviteeId);
 
-        AlbumPermission viewerPermission = AlbumPermission.builder().permission("VIEWER").build();
-
         ReflectionTestUtils.setField(album, "id", albumId);
 
         when(albumRepository.findById(albumId)).thenReturn(Optional.of(album));
         when(albumMemberRepository.findByAlbumIdAndUserId(albumId, requesterId))
                 .thenReturn(Optional.of(managerMember));
-        when(albumPermissionRepository.findByPermission("VIEWER"))
-                .thenReturn(Optional.of(viewerPermission));
         when(userRepository.findAllById(inviteeIds))
                 .thenReturn(List.of(invitee));
         when(albumMemberRepository.save(any(AlbumMember.class)))
@@ -433,37 +405,32 @@ class AlbumServiceTest {
         Long targetMemberId = 20L;
         String newPermission = "editor";
 
-        AlbumPermission managerPermission = AlbumPermission.builder().permission("MANAGER").build();
         User managerUser = User.builder().email("manager@test.com").username("manager").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(managerUser, "id", requesterId);
         AlbumMember requester = AlbumMember.builder()
                 .album(album)
                 .user(managerUser)
-                .permission(managerPermission)
+                .permission(MemberAlbumPermission.MANAGER)
                 .build();
 
-        AlbumPermission currentPermission = AlbumPermission.builder().permission("VIEWER").build();
-        AlbumPermission newPermissionEntity = AlbumPermission.builder().permission("EDITOR").build();
         User targetUser = User.builder().email("target@test.com").username("target").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(targetUser, "id", targetMemberId);
         AlbumMember targetMember = AlbumMember.builder()
                 .album(album)
                 .user(targetUser)
-                .permission(currentPermission)
+                .permission(MemberAlbumPermission.VIEWER)
                 .build();
 
         when(albumMemberRepository.findByAlbumIdAndUserId(albumId, requesterId))
                 .thenReturn(Optional.of(requester));
         when(albumMemberRepository.findByAlbumIdAndUserId(albumId, targetMemberId))
                 .thenReturn(Optional.of(targetMember));
-        when(albumPermissionRepository.findByPermission("EDITOR"))
-                .thenReturn(Optional.of(newPermissionEntity));
 
         // when: 멤버 권한 변경 서비스 메서드 호출
         albumService.updateMemberPermission(albumId, targetMemberId, newPermission, requesterId);
 
         // then: 대상 멤버의 권한이 변경되었는지 확인
-        assertThat(targetMember.getPermission().getPermission()).isEqualTo("EDITOR");
+        assertThat(targetMember.getPermission()).isEqualTo(MemberAlbumPermission.EDITOR);
     }
 
     @Test
@@ -513,13 +480,12 @@ class AlbumServiceTest {
         Long targetMemberId = 999L;
         String newPermission = "editor";
 
-        AlbumPermission managerPermission = AlbumPermission.builder().permission("MANAGER").build();
         User managerUser = User.builder().email("manager@test.com").username("manager").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(managerUser, "id", requesterId);
         AlbumMember requester = AlbumMember.builder()
                 .album(album)
                 .user(managerUser)
-                .permission(managerPermission)
+                .permission(MemberAlbumPermission.MANAGER)
                 .build();
 
         when(albumMemberRepository.findByAlbumIdAndUserId(albumId, requesterId))
@@ -534,29 +500,27 @@ class AlbumServiceTest {
 
     @Test
     @DisplayName("멤버 권한 변경 - 존재하지 않는 권한 타입으로 변경하려고 하면 예외가 발생한다")
-    void updateMemberPermission_invalidPermission_throwsAlbumPermissionNotFoundException() {
+    void updateMemberPermission_invalidPermission_throwsIllegalArgumentException() {
         // given: 잘못된 권한 문자열로 권한 변경을 시도하는 상황 설정
         Long albumId = 1L;
         Long requesterId = 10L;
         Long targetMemberId = 20L;
         String invalidPermission = "invalid";
 
-        AlbumPermission managerPermission = AlbumPermission.builder().permission("MANAGER").build();
         User managerUser = User.builder().email("manager@test.com").username("manager").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(managerUser, "id", requesterId);
         AlbumMember requester = AlbumMember.builder()
                 .album(album)
                 .user(managerUser)
-                .permission(managerPermission)
+                .permission(MemberAlbumPermission.MANAGER)
                 .build();
 
-        AlbumPermission currentPermission = AlbumPermission.builder().permission("VIEWER").build();
         User targetUser = User.builder().email("target@test.com").username("target").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(targetUser, "id", targetMemberId);
         AlbumMember targetMember = AlbumMember.builder()
                 .album(album)
                 .user(targetUser)
-                .permission(currentPermission)
+                .permission(MemberAlbumPermission.VIEWER)
                 .build();
 
         when(albumMemberRepository.findByAlbumIdAndUserId(albumId, requesterId))
@@ -577,22 +541,20 @@ class AlbumServiceTest {
         Long requesterId = 10L;
         Long targetMemberId = 20L;
 
-        AlbumPermission managerPermission = AlbumPermission.builder().permission("MANAGER").build();
         User managerUser = User.builder().email("manager@test.com").username("manager").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(managerUser, "id", requesterId);
         AlbumMember requester = AlbumMember.builder()
                 .album(album)
                 .user(managerUser)
-                .permission(managerPermission)
+                .permission(MemberAlbumPermission.MANAGER)
                 .build();
 
-        AlbumPermission viewerPermission = AlbumPermission.builder().permission("VIEWER").build();
         User targetUser = User.builder().email("target@test.com").username("target").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(targetUser, "id", targetMemberId);
         AlbumMember targetMember = AlbumMember.builder()
                 .album(album)
                 .user(targetUser)
-                .permission(viewerPermission)
+                .permission(MemberAlbumPermission.VIEWER)
                 .build();
 
         when(albumMemberRepository.findByAlbumIdAndUserId(albumId, requesterId))
@@ -651,13 +613,12 @@ class AlbumServiceTest {
         Long requesterId = 10L;
         Long targetMemberId = 999L;
 
-        AlbumPermission managerPermission = AlbumPermission.builder().permission("MANAGER").build();
         User managerUser = User.builder().email("manager@test.com").username("manager").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(managerUser, "id", requesterId);
         AlbumMember requester = AlbumMember.builder()
                 .album(album)
                 .user(managerUser)
-                .permission(managerPermission)
+                .permission(MemberAlbumPermission.MANAGER)
                 .build();
 
         when(albumMemberRepository.findByAlbumIdAndUserId(albumId, requesterId))
@@ -678,13 +639,12 @@ class AlbumServiceTest {
         Long requesterId = 10L;
         Long targetMemberId = 20L;
 
-        AlbumPermission managerPermission = AlbumPermission.builder().permission("MANAGER").build();
         User requesterUser = User.builder().email("manager1@test.com").username("manager1").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(requesterUser, "id", requesterId);
         AlbumMember requester = AlbumMember.builder()
                 .album(album)
                 .user(requesterUser)
-                .permission(managerPermission)
+                .permission(MemberAlbumPermission.MANAGER)
                 .build();
 
         User targetUser = User.builder().email("manager2@test.com").username("manager2").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
@@ -692,7 +652,7 @@ class AlbumServiceTest {
         AlbumMember targetMember = AlbumMember.builder()
                 .album(album)
                 .user(targetUser)
-                .permission(managerPermission)
+                .permission(MemberAlbumPermission.MANAGER)
                 .build();
 
         when(albumMemberRepository.findByAlbumIdAndUserId(albumId, requesterId))
@@ -728,7 +688,7 @@ class AlbumServiceTest {
     }
 
     private AlbumMember memberWithPermission(String permissionValue) {
-        AlbumPermission permission = AlbumPermission.builder().permission(permissionValue).build();
+        MemberAlbumPermission permission = MemberAlbumPermission.valueOf(permissionValue);
         AccountPlan plan = AccountPlan.builder().plan("FREE").build();
         User user = User.builder().email("viewer@a.com").username("viewer").accountPlan(plan).build();
         return AlbumMember.builder().album(album).user(user).permission(permission).build();
