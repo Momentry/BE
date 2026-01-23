@@ -22,6 +22,7 @@ import com.momentry.BE.domain.album.entity.AlbumPermission;
 import com.momentry.BE.domain.album.entity.AlbumTag;
 import com.momentry.BE.domain.album.entity.MemberAlbumPermission;
 import com.momentry.BE.domain.album.exception.AlbumPermissionNotFoundException;
+import com.momentry.BE.domain.album.exception.CannotKickManagerException;
 import com.momentry.BE.domain.album.exception.DuplicateTagException;
 import com.momentry.BE.domain.album.exception.AlbumNotFoundException;
 import com.momentry.BE.domain.album.exception.InvalidAlbumInviteRequestException;
@@ -154,6 +155,22 @@ public class AlbumService {
     }
 
     /**
+     * Manager가 다른 Manager를 강퇴하는 것을 방지
+     *
+     * @implNote 요청자와 대상 멤버가 모두 MANAGER인 경우 CannotKickManagerException 예외를 발생시킴
+     * @param requester 요청자(강퇴를 시도하는 멤버)
+     * @param targetMember 강퇴 대상 멤버
+     */
+    private void preventManagerKickingManager(AlbumMember requester, AlbumMember targetMember) {
+        String requesterPermission = requester.getPermission().getPermission();
+        String targetPermission = targetMember.getPermission().getPermission();
+        if (MemberAlbumPermission.valueOf(requesterPermission) == MemberAlbumPermission.MANAGER
+                && MemberAlbumPermission.valueOf(targetPermission) == MemberAlbumPermission.MANAGER) {
+            throw new CannotKickManagerException();
+        }
+    }
+
+    /**
      * 앨범 ID로 앨범을 조회
      *
      * @implNote 앨범을 찾을 수 없는 경우 AlbumNotFoundException 예외를 발생시킴
@@ -253,6 +270,7 @@ public class AlbumService {
         requireMemberEditPermission(requester.getPermission().getPermission());
 
         AlbumMember targetMember = getAlbumMember(albumId, memberId);
+        preventManagerKickingManager(requester, targetMember);
 
         albumMemberRepository.delete(targetMember);
     }

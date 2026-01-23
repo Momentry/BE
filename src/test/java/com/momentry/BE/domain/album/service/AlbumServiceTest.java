@@ -34,6 +34,7 @@ import com.momentry.BE.domain.album.entity.AlbumPermission;
 import com.momentry.BE.domain.album.entity.AlbumTag;
 import com.momentry.BE.domain.album.exception.AlbumMemberNotFoundException;
 import com.momentry.BE.domain.album.exception.AlbumNotFoundException;
+import com.momentry.BE.domain.album.exception.CannotKickManagerException;
 import com.momentry.BE.domain.album.exception.InvalidAlbumInviteRequestException;
 import com.momentry.BE.domain.album.exception.NoAlbumEditPermissionException;
 import com.momentry.BE.domain.album.exception.NoAlbumMemberEditPermissionException;
@@ -667,6 +668,41 @@ class AlbumServiceTest {
         // when & then
         assertThatThrownBy(() -> albumService.kickMember(albumId, targetMemberId, requesterId))
                 .isInstanceOf(AlbumMemberNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("멤버 강퇴 - Manager가 다른 Manager를 강퇴하려고 하면 예외가 발생한다")
+    void kickMember_managerKickingManager_throwsCannotKickManagerException() {
+        // given: Manager 권한을 가진 사용자가 다른 Manager를 강퇴하려는 상황 설정
+        Long albumId = 1L;
+        Long requesterId = 10L;
+        Long targetMemberId = 20L;
+
+        AlbumPermission managerPermission = AlbumPermission.builder().permission("MANAGER").build();
+        User requesterUser = User.builder().email("manager1@test.com").username("manager1").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
+        ReflectionTestUtils.setField(requesterUser, "id", requesterId);
+        AlbumMember requester = AlbumMember.builder()
+                .album(album)
+                .user(requesterUser)
+                .permission(managerPermission)
+                .build();
+
+        User targetUser = User.builder().email("manager2@test.com").username("manager2").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
+        ReflectionTestUtils.setField(targetUser, "id", targetMemberId);
+        AlbumMember targetMember = AlbumMember.builder()
+                .album(album)
+                .user(targetUser)
+                .permission(managerPermission)
+                .build();
+
+        when(albumMemberRepository.findByAlbumIdAndUserId(albumId, requesterId))
+                .thenReturn(Optional.of(requester));
+        when(albumMemberRepository.findByAlbumIdAndUserId(albumId, targetMemberId))
+                .thenReturn(Optional.of(targetMember));
+
+        // when & then
+        assertThatThrownBy(() -> albumService.kickMember(albumId, targetMemberId, requesterId))
+                .isInstanceOf(CannotKickManagerException.class);
     }
 
     private File buildFile(Album album, LocalDateTime createdAt, Long id) {
