@@ -52,10 +52,6 @@ public class SearchService {
      * @return 검색된 사용자 목록(사용자 아이디, 이름, 이메일, 프로필 이미지 URL)
      */
     public List<UserSearchResult> searchUsersByKeyword(String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return List.of();
-        }
-
         List<User> users = userRepository.findActiveUsersByKeyword(keyword);
         List<UserSearchResult> results = new ArrayList<>();
         for (User user : users) {

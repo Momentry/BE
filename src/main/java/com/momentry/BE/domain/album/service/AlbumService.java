@@ -209,16 +209,15 @@ public class AlbumService {
      *
      * @param albumId   앨범 ID
      * @param memberId  권한을 변경할 멤버(사용자) ID
-     * @param permission 부여할 권한 종류 (manager, editor, viewer)
+     * @param targetPermission 부여할 권한 종류 (manager, editor, viewer)
      * @param userId    요청자(현재 사용자) ID
      */
     @Transactional
-    public void updateMemberPermission(Long albumId, Long memberId, String permission, Long userId) {
+    public void updateMemberPermission(Long albumId, Long memberId, MemberAlbumPermission targetPermission, Long userId) {
         AlbumMember requester = getAlbumPermission(albumId, userId);
         requireMemberEditPermission(requester.getPermission());
 
         AlbumMember targetMember = getAlbumMember(albumId, memberId);
-        MemberAlbumPermission targetPermission = MemberAlbumPermission.valueOf(permission.toUpperCase());
 
         targetMember.changePermission(targetPermission);
     }

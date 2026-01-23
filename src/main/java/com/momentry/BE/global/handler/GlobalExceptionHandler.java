@@ -2,8 +2,15 @@ package com.momentry.BE.global.handler;
 
 import com.momentry.BE.global.dto.ApiResponse;
 import com.momentry.BE.global.exception.BusinessException;
+
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -22,6 +29,44 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
         log.warn("BusinessException - Message: {}, Status: {}", e.getMessage(), e.getStatus());
         return ApiResponse.ofFail(e.getStatus(), e.getMessage());
+    }
+
+    /**
+     * RequestBody DTO(@Valid) 바인딩/검증 실패 처리
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getAllErrors().stream()
+            .findFirst()
+            .map(DefaultMessageSourceResolvable::getDefaultMessage)
+            .orElse("요청 값이 올바르지 않습니다.");
+
+        log.debug("Validation failed(MethodArgumentNotValidException): {}", message);
+        return ApiResponse.ofFail(400, message);
+    }
+
+    /**
+     * @RequestParam, @PathVariable 등에 대한 제약조건(@NotBlank 등) 위반 처리
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException e) {
+        String message = e.getConstraintViolations().stream()
+            .findFirst()
+            .map(ConstraintViolation::getMessage)
+            .orElse("요청 값이 올바르지 않습니다.");
+
+        log.debug("Validation failed(ConstraintViolationException): {}", message);
+        return ApiResponse.ofFail(400, message);
+    }
+
+    /**
+     * 필수 RequestParam 누락(MissingServletRequestParameterException) 처리
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleMissingServletRequestParameter(MissingServletRequestParameterException e) {
+        String message = String.format("필수 요청 파라미터(%s)가 누락되었습니다.", e.getParameterName());
+        log.debug("Missing request parameter: {}", e.getParameterName());
+        return ApiResponse.ofFail(400, message);
     }
 
     /**

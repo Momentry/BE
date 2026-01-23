@@ -403,7 +403,7 @@ class AlbumServiceTest {
         Long albumId = 1L;
         Long requesterId = 10L;
         Long targetMemberId = 20L;
-        String newPermission = "editor";
+        MemberAlbumPermission newPermission = MemberAlbumPermission.EDITOR;
 
         User managerUser = User.builder().email("manager@test.com").username("manager").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(managerUser, "id", requesterId);
@@ -440,7 +440,7 @@ class AlbumServiceTest {
         Long albumId = 1L;
         Long requesterId = 10L;
         Long targetMemberId = 20L;
-        String newPermission = "editor";
+        MemberAlbumPermission newPermission = MemberAlbumPermission.EDITOR;
 
         AlbumMember editorMember = memberWithPermission("EDITOR");
 
@@ -459,7 +459,7 @@ class AlbumServiceTest {
         Long albumId = 1L;
         Long requesterId = 10L;
         Long targetMemberId = 20L;
-        String newPermission = "editor";
+        MemberAlbumPermission newPermission = MemberAlbumPermission.EDITOR;
 
         AlbumMember viewerMember = memberWithPermission("VIEWER");
 
@@ -478,7 +478,7 @@ class AlbumServiceTest {
         Long albumId = 1L;
         Long requesterId = 10L;
         Long targetMemberId = 999L;
-        String newPermission = "editor";
+        MemberAlbumPermission newPermission = MemberAlbumPermission.EDITOR;
 
         User managerUser = User.builder().email("manager@test.com").username("manager").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
         ReflectionTestUtils.setField(managerUser, "id", requesterId);
@@ -498,40 +498,6 @@ class AlbumServiceTest {
                 .isInstanceOf(AlbumMemberNotFoundException.class);
     }
 
-    @Test
-    @DisplayName("멤버 권한 변경 - 존재하지 않는 권한 타입으로 변경하려고 하면 예외가 발생한다")
-    void updateMemberPermission_invalidPermission_throwsIllegalArgumentException() {
-        // given: 잘못된 권한 문자열로 권한 변경을 시도하는 상황 설정
-        Long albumId = 1L;
-        Long requesterId = 10L;
-        Long targetMemberId = 20L;
-        String invalidPermission = "invalid";
-
-        User managerUser = User.builder().email("manager@test.com").username("manager").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
-        ReflectionTestUtils.setField(managerUser, "id", requesterId);
-        AlbumMember requester = AlbumMember.builder()
-                .album(album)
-                .user(managerUser)
-                .permission(MemberAlbumPermission.MANAGER)
-                .build();
-
-        User targetUser = User.builder().email("target@test.com").username("target").accountPlan(AccountPlan.builder().plan("FREE").build()).build();
-        ReflectionTestUtils.setField(targetUser, "id", targetMemberId);
-        AlbumMember targetMember = AlbumMember.builder()
-                .album(album)
-                .user(targetUser)
-                .permission(MemberAlbumPermission.VIEWER)
-                .build();
-
-        when(albumMemberRepository.findByAlbumIdAndUserId(albumId, requesterId))
-                .thenReturn(Optional.of(requester));
-        when(albumMemberRepository.findByAlbumIdAndUserId(albumId, targetMemberId))
-                .thenReturn(Optional.of(targetMember));
-
-        // when & then
-        assertThatThrownBy(() -> albumService.updateMemberPermission(albumId, targetMemberId, invalidPermission, requesterId))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
 
     @Test
     @DisplayName("멤버 강퇴 - Manager가 멤버를 성공적으로 강퇴한다")
