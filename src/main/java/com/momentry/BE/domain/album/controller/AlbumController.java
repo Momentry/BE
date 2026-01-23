@@ -115,7 +115,7 @@ public class AlbumController {
             @PathVariable Long albumId,
             @PathVariable Long memberId,
             Long userId) {
-        albumService.removeMember(albumId, memberId, userId);
+        albumService.kickMember(albumId, memberId, userId);
         return ApiResponse.ofSuccess();
     }
 }

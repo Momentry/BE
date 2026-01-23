@@ -570,7 +570,7 @@ class AlbumServiceTest {
 
     @Test
     @DisplayName("멤버 강퇴 - Manager가 멤버를 성공적으로 강퇴한다")
-    void removeMember_asManager_success() {
+    void kickMember_asManager_success() {
         // given: Manager 권한을 가진 사용자가 다른 멤버를 강퇴하는 상황 설정
         Long albumId = 1L;
         Long requesterId = 10L;
@@ -600,7 +600,7 @@ class AlbumServiceTest {
                 .thenReturn(Optional.of(targetMember));
 
         // when: 멤버 강퇴 서비스 메서드 호출
-        albumService.removeMember(albumId, targetMemberId, requesterId);
+        albumService.kickMember(albumId, targetMemberId, requesterId);
 
         // then: 멤버 삭제가 호출되었는지 확인
         verify(albumMemberRepository).delete(targetMember);
@@ -608,7 +608,7 @@ class AlbumServiceTest {
 
     @Test
     @DisplayName("멤버 강퇴 - Editor가 멤버 강퇴를 시도하면 권한 예외가 발생한다")
-    void removeMember_asEditor_throwsNoAlbumMemberEditPermissionException() {
+    void kickMember_asEditor_throwsNoAlbumMemberEditPermissionException() {
         // given: Editor 권한을 가진 사용자가 멤버 강퇴를 시도하는 상황 설정
         Long albumId = 1L;
         Long requesterId = 10L;
@@ -620,13 +620,13 @@ class AlbumServiceTest {
                 .thenReturn(Optional.of(editorMember));
 
         // when & then
-        assertThatThrownBy(() -> albumService.removeMember(albumId, targetMemberId, requesterId))
+        assertThatThrownBy(() -> albumService.kickMember(albumId, targetMemberId, requesterId))
                 .isInstanceOf(NoAlbumMemberEditPermissionException.class);
     }
 
     @Test
     @DisplayName("멤버 강퇴 - Viewer가 멤버 강퇴를 시도하면 권한 예외가 발생한다")
-    void removeMember_asViewer_throwsNoAlbumMemberEditPermissionException() {
+    void kickMember_asViewer_throwsNoAlbumMemberEditPermissionException() {
         // given: Viewer 권한을 가진 사용자가 멤버 강퇴를 시도하는 상황 설정
         Long albumId = 1L;
         Long requesterId = 10L;
@@ -638,13 +638,13 @@ class AlbumServiceTest {
                 .thenReturn(Optional.of(viewerMember));
 
         // when & then
-        assertThatThrownBy(() -> albumService.removeMember(albumId, targetMemberId, requesterId))
+        assertThatThrownBy(() -> albumService.kickMember(albumId, targetMemberId, requesterId))
                 .isInstanceOf(NoAlbumMemberEditPermissionException.class);
     }
 
     @Test
     @DisplayName("멤버 강퇴 - 존재하지 않는 멤버를 강퇴하려고 하면 예외가 발생한다")
-    void removeMember_memberNotFound_throwsAlbumMemberNotFoundException() {
+    void kickMember_memberNotFound_throwsAlbumMemberNotFoundException() {
         // given: 존재하지 않는 멤버를 강퇴하려는 상황 설정
         Long albumId = 1L;
         Long requesterId = 10L;
@@ -665,7 +665,7 @@ class AlbumServiceTest {
                 .thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> albumService.removeMember(albumId, targetMemberId, requesterId))
+        assertThatThrownBy(() -> albumService.kickMember(albumId, targetMemberId, requesterId))
                 .isInstanceOf(AlbumMemberNotFoundException.class);
     }
 

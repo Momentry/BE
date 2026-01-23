@@ -248,7 +248,7 @@ public class AlbumService {
      * @param userId   요청자(현재 사용자) ID
      */
     @Transactional
-    public void removeMember(Long albumId, Long memberId, Long userId) {
+    public void kickMember(Long albumId, Long memberId, Long userId) {
         AlbumMember requester = getAlbumPermission(albumId, userId);
         requireMemberEditPermission(requester.getPermission().getPermission());
 
