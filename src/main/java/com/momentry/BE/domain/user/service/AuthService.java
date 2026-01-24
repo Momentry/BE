@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +25,7 @@ public class AuthService {
     @Value("${jwt.refresh-token-expiration}")
     private int refreshTokenExpiration;
 
+    @Transactional
     public LoginResponse login(LoginRequest request, HttpServletResponse response){
         // 1. id_token 서명 검증 + claims 추출
         OidcClaims claims = idTokenValidator.validateToken(request.getProvider(), request.getIdToken());
