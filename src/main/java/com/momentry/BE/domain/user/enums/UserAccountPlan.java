@@ -1,8 +1,8 @@
 package com.momentry.BE.domain.user.enums;
 
 public enum UserAccountPlan {
-    FREE_USER("freeUser"),
-    PREMIUM_USER("premiumUser");
+    FREE_USER("FREE"),
+    PREMIUM_USER("PREMIUM");
 
     private final String plan;
 
