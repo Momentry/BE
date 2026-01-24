@@ -12,9 +12,12 @@ import org.springframework.util.Assert;
 public class AlertPreference {
 
     @Id
+    @Column(name = "user_id")
+    private Long userId;
+
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId // users 테이블의 PK를 alerts 테이블의 PK로 사용
-    @JoinColumn(name = "user_id")
+    @MapsId
+    @PrimaryKeyJoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
     @Column(nullable = false)

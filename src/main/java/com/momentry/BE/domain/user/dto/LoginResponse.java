@@ -2,11 +2,13 @@ package com.momentry.BE.domain.user.dto;
 
 import com.momentry.BE.domain.user.entity.AlertPreference;
 import com.momentry.BE.domain.user.entity.User;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
+@AllArgsConstructor
 public class LoginResponse {
 
     private Long userId;
@@ -19,6 +21,7 @@ public class LoginResponse {
 
     @Getter
     @Builder
+    @AllArgsConstructor
     public static class AlertDto {
         private boolean albumCreated;
         private boolean invited;
