@@ -1,4 +1,4 @@
-package com.momentry.BE.config;
+package com.momentry.BE.security.config;
 
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
