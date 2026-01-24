@@ -37,10 +37,16 @@ dependencies {
 		implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 		runtimeOnly 'com.mysql:mysql-connector-j'
 
+		// =========== CloudFront Signed Cookie ===========
+		implementation platform('software.amazon.awssdk:bom:2.25.59')
+		implementation 'software.amazon.awssdk:cloudfront'
+
 		// =========== Test ===========
 		testImplementation 'org.springframework.boot:spring-boot-starter-test'
 		testImplementation 'org.springframework.security:spring-security-test'
 		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+		testImplementation 'org.mockito:mockito-core:5.11.0'
+		testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
 	}
 }
 

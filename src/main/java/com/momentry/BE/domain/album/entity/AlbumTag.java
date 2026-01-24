@@ -1,9 +1,23 @@
-package com.momentry.BE.domain.file.entity;
+package com.momentry.BE.domain.album.entity;
 
-import com.momentry.BE.domain.album.entity.Album;
-import jakarta.persistence.*;
-import lombok.*;
 import org.springframework.util.Assert;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(
@@ -16,9 +30,10 @@ import org.springframework.util.Assert;
         }
 )
 @Getter
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Tag {
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class AlbumTag {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,6 +42,8 @@ public class Tag {
     @JoinColumn(name="album_id", nullable = false)
     private Album album;
 
+
+    @Setter
     @Column(nullable = false, length = 50)
     private String tagName;
 
@@ -34,8 +51,7 @@ public class Tag {
     private Long count = 0L;
 
     @Builder
-    public Tag(Album album, String tagName){
-        // 유효성 체크: 필수 값이 없으면 객체 생성 자체를 막음
+    public AlbumTag (Album album, String tagName){
         Assert.notNull(album, "앨범은 필수 값입니다.");
         Assert.hasText(tagName, "태그 이름은 필수 값입니다.");
 
