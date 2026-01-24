@@ -1,0 +1,28 @@
+spring:
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/momentry?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: false
+
+cloudfront:
+  enabled: ${CF_ENABLED:false}
+  key-pair-id: ${CF_KEY_PAIR_ID:}
+  private-key: ${CF_PRIVATE_KEY:}
+  resource-url: ${CF_RESOURCE_URL:}
+  cookie-domain: ${CF_COOKIE_DOMAIN:}
+  cookie-path: ${CF_COOKIE_PATH:/}
+  cookie-ttl-seconds: ${CF_COOKIE_TTL:3600}
+  secure: ${CF_COOKIE_SECURE:true}
+  http-only: ${CF_COOKIE_HTTP_ONLY:true}
+  same-site: ${CF_COOKIE_SAME_SITE:None}

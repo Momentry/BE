@@ -5,12 +5,6 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-# Spring Boot config
-src/main/resources/application*.yml
-src/main/resources/application*.yaml
-# 샘플 설정 -> 예시용
-!src/main/resources/application-example.yml
-!src/main/resources/application-example.yaml
 
 ### STS ###
 .apt_generated
