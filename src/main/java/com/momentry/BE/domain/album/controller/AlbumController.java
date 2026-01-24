@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.momentry.BE.domain.album.dto.AlbumCreationRequest;
 import com.momentry.BE.domain.album.dto.AlbumCreationResponse;
+import com.momentry.BE.domain.album.dto.AlbumDetailResponse;
 import com.momentry.BE.domain.album.dto.AlbumTagResult;
 import com.momentry.BE.domain.album.dto.TagCreationRequest;
 import com.momentry.BE.domain.album.dto.TagUpdateRequest;
@@ -43,10 +44,10 @@ public class AlbumController {
      * @param userId  사용자 ID (추후 시큐리티 적용 시 @AuthenticationPrincipal로 변경)
      * @return 앨범 생성 응답 (albumId, albumName)
      */
-    @PostMapping("/album")
+    @PostMapping
     public ResponseEntity<ApiResponse<AlbumCreationResponse>> createAlbum(
             @ModelAttribute AlbumCreationRequest request,
-            @RequestParam("userId") Long userId) {
+            Long userId) {
 
         // 디버깅: 요청 데이터 확인
         System.out.println("DEBUG - albumName: " + request.getAlbumName());
@@ -71,6 +72,21 @@ public class AlbumController {
 
         AlbumCreationResponse response = albumService.createAlbum(request.getAlbumName(), coverImageUrl, userId);
         return ApiResponse.ofSuccess(HttpStatus.CREATED, "앨범 생성 성공", response);
+    }
+
+    /**
+     * 앨범 상세 정보 조회
+     * 
+     * @param albumId 앨범 ID
+     * @param userId  사용자 ID (추후 시큐리티 적용 시 @AuthenticationPrincipal로 변경)
+     * @return 앨범 상세 정보 (앨범 이름, 커버 이미지, 파일 개수, 멤버 목록, 태그 목록)
+     */
+    @GetMapping("/{albumId}")
+    public ResponseEntity<ApiResponse<AlbumDetailResponse>> getAlbum(
+            @PathVariable Long albumId,
+            Long userId) {
+        AlbumDetailResponse response = albumService.getAlbumDetail(albumId, userId);
+        return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 정보 조회 성공", response);
     }
 
     @PostMapping("/{albumId}/tags")

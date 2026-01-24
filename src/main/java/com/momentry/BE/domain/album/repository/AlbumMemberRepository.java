@@ -1,5 +1,6 @@
 package com.momentry.BE.domain.album.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,4 +18,7 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
 
     @Query("SELECT am FROM AlbumMember am JOIN FETCH am.album JOIN FETCH am.permission WHERE am.album.id = :albumId AND am.user.id = :userId")
     Optional<AlbumMember> findByAlbumIdAndUserIdWithAlbum(@Param("albumId") Long albumId, @Param("userId") Long userId);
+
+    @Query("SELECT am FROM AlbumMember am JOIN FETCH am.user JOIN FETCH am.permission WHERE am.album.id = :albumId")
+    List<AlbumMember> findByAlbumIdWithUser(@Param("albumId") Long albumId);
 }
