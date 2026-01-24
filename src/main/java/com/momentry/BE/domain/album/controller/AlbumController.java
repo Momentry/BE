@@ -49,19 +49,6 @@ public class AlbumController {
             @ModelAttribute AlbumCreationRequest request,
             Long userId) {
 
-        // 디버깅: 요청 데이터 확인
-        System.out.println("DEBUG - albumName: " + request.getAlbumName());
-        System.out.println("DEBUG - albumName is null: " + (request.getAlbumName() == null));
-        if (request.getAlbumName() != null) {
-            System.out.println("DEBUG - albumName length: " + request.getAlbumName().length());
-            System.out.println("DEBUG - albumName isBlank: " + request.getAlbumName().isBlank());
-        }
-
-        if (request.getAlbumName() == null || request.getAlbumName().isBlank()) {
-            throw new IllegalArgumentException(
-                    "앨범 이름이 비어있습니다. form-data의 Key가 'albumName'인지 확인하세요. 받은 값: " + request.getAlbumName());
-        }
-
         // S3 업로드 서비스 구현 시 여기서 파일 업로드 처리
         // 현재는 파일이 있어도 업로드하지 않고 default 이미지 사용
         String coverImageUrl = null;
@@ -87,6 +74,32 @@ public class AlbumController {
             Long userId) {
         AlbumDetailResponse response = albumService.getAlbumDetail(albumId, userId);
         return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 정보 조회 성공", response);
+    }
+
+    /**
+     * 앨범 정보 수정
+     * 
+     * @param albumId 앨범 ID
+     * @param request 앨범 수정 요청 (albumName, albumCoverImage) - 선택적
+     * @param userId  사용자 ID (추후 시큐리티 적용 시 @AuthenticationPrincipal로 변경)
+     * @return 앨범 수정 응답
+     */
+    @PostMapping("/{albumId}")
+    public ResponseEntity<ApiResponse<Object>> updateAlbum(
+            @PathVariable Long albumId,
+            @ModelAttribute AlbumCreationRequest request,
+            Long userId) {
+
+        // S3 업로드 서비스 구현 시 여기서 파일 업로드 처리
+        // 현재는 파일이 있어도 업로드하지 않고 기존 이미지 유지
+        String coverImageUrl = null;
+        if (request.getAlbumCoverImage() != null && !request.getAlbumCoverImage().isEmpty()) {
+            // 나중에 S3 업로드 서비스를 만들면 여기서 업로드하고 URL을 받아옴
+            // coverImageUrl = s3UploadService.uploadFile(request.getAlbumCoverImage());
+        }
+
+        albumService.updateAlbum(albumId, request.getAlbumName(), coverImageUrl, userId);
+        return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 정보 수정 성공", null);
     }
 
     @PostMapping("/{albumId}/tags")

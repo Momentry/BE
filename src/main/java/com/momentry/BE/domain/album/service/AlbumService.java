@@ -109,6 +109,44 @@ public class AlbumService {
     }
 
     /**
+     * 앨범 정보 수정
+     * 
+     * @param albumId      앨범 ID
+     * @param albumName    앨범 이름 (null이면 업데이트 안함)
+     * @param coverImageUrl 커버 이미지 URL (null이면 업데이트 안함)
+     * @param userId       사용자 ID
+     */
+    @Transactional
+    public void updateAlbum(Long albumId, String albumName, String coverImageUrl, Long userId) {
+        // 권한 확인 (편집 권한 필요)
+        AlbumMember albumMember = getAlbumPermission(albumId, userId);
+        requireEditPermission(albumMember.getPermission().getPermission());
+
+        // 앨범 조회
+        Album album = albumRepository.findById(albumId)
+                .orElseThrow(AlbumNotFoundException::new);
+
+        // 앨범 이름 업데이트 (제공된 경우)
+        if (albumName != null && !albumName.isBlank()) {
+            // 다른 앨범과 이름 중복 체크 (자기 자신은 제외)
+            albumRepository.findByName(albumName)
+                    .ifPresent(existingAlbum -> {
+                        if (!existingAlbum.getId().equals(albumId)) {
+                            throw new DuplicateAlbumNameException();
+                        }
+                    });
+            album.setName(albumName);
+        }
+
+        // 커버 이미지 URL 업데이트 (제공된 경우)
+        if (coverImageUrl != null && !coverImageUrl.isBlank()) {
+            album.setCoverImageUrl(coverImageUrl);
+        }
+
+        albumRepository.save(album);
+    }
+
+    /**
      * 앨범 태그 생성
      * 
      * @param albumId 앨범 ID

@@ -23,8 +23,10 @@ public class Album {
     private Long id;
 
     @Column(nullable = false, length = 100)
+    @Setter
     private String name;
 
+    @Setter
     private String coverImageUrl;
 
     @CreatedDate
