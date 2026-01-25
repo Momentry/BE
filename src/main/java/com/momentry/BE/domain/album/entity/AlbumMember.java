@@ -32,12 +32,12 @@ public class AlbumMember {
     @JoinColumn(name = "album_id", nullable = false)
     private Album album;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "permission_id", nullable = false)
-    private AlbumPermission permission;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private MemberAlbumPermission permission;
 
     @Builder
-    public AlbumMember(User user, Album album, AlbumPermission permission) {
+    public AlbumMember(User user, Album album, MemberAlbumPermission permission) {
         // 유효성 체크: 필수 값이 없으면 객체 생성 자체를 막음
         Assert.notNull(user, "사용자는 필수 값입니다.");
         Assert.notNull(album, "앨범은 필수 값입니다.");
@@ -45,6 +45,11 @@ public class AlbumMember {
 
         this.user = user;
         this.album = album;
+        this.permission = permission;
+    }
+
+    public void changePermission(MemberAlbumPermission permission) {
+        Assert.notNull(permission, "권한 정보는 필수 값입니다.");
         this.permission = permission;
     }
 }
