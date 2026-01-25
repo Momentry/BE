@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.momentry.BE.domain.album.dto.AlbumCreationResponse;
 import com.momentry.BE.domain.album.dto.AlbumDetailResponse;
-import com.momentry.BE.domain.album.dto.AlbumMemberResult;
 import com.momentry.BE.domain.album.dto.AlbumTagResult;
 import com.momentry.BE.domain.album.dto.AlbumTagSimpleResult;
 import com.momentry.BE.domain.album.entity.Album;
@@ -111,10 +110,10 @@ public class AlbumService {
     /**
      * 앨범 정보 수정
      * 
-     * @param albumId      앨범 ID
-     * @param albumName    앨범 이름 (null이면 업데이트 안함)
+     * @param albumId       앨범 ID
+     * @param albumName     앨범 이름 (null이면 업데이트 안함)
      * @param coverImageUrl 커버 이미지 URL (null이면 업데이트 안함)
-     * @param userId       사용자 ID
+     * @param userId        사용자 ID
      */
     @Transactional
     public void updateAlbum(Long albumId, String albumName, String coverImageUrl, Long userId) {
@@ -145,6 +144,23 @@ public class AlbumService {
 
         albumRepository.save(album);
     }
+
+    // /**
+    // * 앨범 나가기
+    // *
+    // * @param albumId 앨범 ID
+    // * @param userId 사용자 ID
+    // */
+    // @Transactional
+    // public void leaveAlbum(Long albumId, Long userId) {
+    // AlbumMember albumMember = getAlbumPermission(albumId, userId);
+    // List<AlbumMember> albumMembers =
+    // albumMemberRepository.findByAlbumId(albumId);
+    // if (albumMember.getPermission().getPermission().equals("MANAGER")
+    // && albumMember.getUser().getId().equals(userId)) {
+    // albumMemberRepository.delete(albumMember);
+    // }
+    // }
 
     /**
      * 앨범 태그 생성
@@ -265,31 +281,13 @@ public class AlbumService {
         Album album = albumRepository.findById(albumId)
                 .orElseThrow(AlbumNotFoundException::new);
 
-        // 멤버 조회
-        List<AlbumMember> members = albumMemberRepository.findByAlbumIdWithUser(albumId);
-        List<AlbumMemberResult> memberResults = members.stream()
-                .map(member -> new AlbumMemberResult(
-                        member.getUser().getId(),
-                        member.getUser().getUsername(),
-                        member.getUser().getEmail(),
-                        member.getUser().getProfileImageUrl()))
-                .toList();
-
-        // 태그 조회
-        List<AlbumTag> tags = albumTagRepository.findByAlbum(album);
-        List<AlbumTagSimpleResult> tagResults = tags.stream()
-                .map(tag -> new AlbumTagSimpleResult(tag.getId(), tag.getTagName()))
-                .toList();
-
         // 파일 개수 조회
         long fileCount = fileRepository.countByAlbum(album);
 
         return new AlbumDetailResponse(
                 album.getName(),
                 album.getCoverImageUrl(),
-                fileCount,
-                memberResults,
-                tagResults);
+                fileCount);
     }
 
     /**

@@ -7,10 +7,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AlbumMemberResult {
-    
+public class AlbumMemberPermissionResult {
+
     private Long userId;
-    private String username;
-    private String email;
-    private String profileUrl;
+    private String permission;
 }

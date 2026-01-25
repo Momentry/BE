@@ -102,6 +102,14 @@ public class AlbumController {
         return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 정보 수정 성공", null);
     }
 
+    // @PostMapping("/{albumId}/leave")
+    // public ResponseEntity<ApiResponse<Object>> leaveAlbum(
+    // @PathVariable Long albumId, Long userId) {
+
+    // albumService.leaveAlbum(albumId, userId);
+    // return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 나가기 성공", null);
+    // }
+
     @PostMapping("/{albumId}/tags")
     public ResponseEntity<ApiResponse<Object>> createTag(@PathVariable Long albumId,
             @RequestBody TagCreationRequest request, Long userId) {

@@ -1,7 +1,5 @@
 package com.momentry.BE.domain.album.dto;
 
-import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,9 +7,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AlbumDetailResponse {
+public class AlbumMemberProfileResult {
 
-    private String albumName;
-    private String coverImageUrl;
-    private Long fileCount;
+    private Long userId;
+    private String profileImageUrl;
 }

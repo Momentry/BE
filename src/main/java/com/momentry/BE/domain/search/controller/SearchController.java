@@ -36,9 +36,9 @@ public class SearchController {
      * @return 앨범 검색 결과
      */
     @GetMapping("/albums")
-    public ResponseEntity<ApiResponse<AlbumSearchResponse>> searchAlbums(
+    public ResponseEntity<ApiResponse<List<AlbumSearchResponse>>> searchAlbums(
             @RequestParam(required = false) String keyword) {
-        AlbumSearchResponse response = searchService.searchAlbums(keyword);
-        return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 목록 조회 성공", response);
+        List<AlbumSearchResponse> albums = searchService.searchAlbums(keyword);
+        return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 검색 조회 성공", albums);
     }
 }
