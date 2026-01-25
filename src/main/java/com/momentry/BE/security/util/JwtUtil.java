@@ -73,7 +73,7 @@ public class JwtUtil {
         try {
             return extractAllClaims(token).getExpiration().before(new Date());
         } catch (Exception e) {
-            return false;
+            return true;
         }
     }
 }
