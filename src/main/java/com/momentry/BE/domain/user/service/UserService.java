@@ -1,17 +1,21 @@
 package com.momentry.BE.domain.user.service;
 
 import com.momentry.BE.domain.user.dto.OidcClaims;
+import com.momentry.BE.domain.user.dto.UserUpdateResponse;
 import com.momentry.BE.domain.user.entity.AccountPlan;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.enums.UserAccountPlan;
 import com.momentry.BE.domain.user.exception.AccountPlanNotFoundException;
 import com.momentry.BE.domain.user.exception.DuplicateUserException;
+import com.momentry.BE.domain.user.exception.MissmatchUserException;
 import com.momentry.BE.domain.user.exception.UserNotFoundException;
 import com.momentry.BE.domain.user.repository.AccountPlanRepository;
 import com.momentry.BE.domain.user.repository.UserRepository;
+import com.momentry.BE.security.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -60,5 +64,32 @@ public class UserService {
         saveUser(newUser);
 
         return newUser;
+    }
+
+    // 정보 수정
+    public UserUpdateResponse update(Long userId, MultipartFile file, String newUsername){
+        if(!userId.equals(SecurityUtil.getCurrentUserId())){
+            throw new MissmatchUserException();
+        }
+
+        User currentUser = getUser(userId);
+
+        // 파일이 있으면 S3 업로드 및 프로필 이미지 URL 업데이트
+        // TODO : S3 업로드 기능 구현 시 적용할 예정
+        //        if (file != null && !file.isEmpty()) {
+        //             fileValidator.image(file);
+        //             String fileUrl = s3Util.upload(file, FileCategory.IMAGE);
+        //             user.setProfileImageUrl(fileUrl);
+        //        }
+
+        // 닉네임이 있으면 업데이트
+        if (newUsername != null && !newUsername.trim().isEmpty()) {
+            currentUser.setUsername(newUsername);
+        }
+
+        // 업데이트 반영
+        saveUser(currentUser);
+
+        return new UserUpdateResponse(currentUser.getUsername(), currentUser.getProfileImageUrl());
     }
 }

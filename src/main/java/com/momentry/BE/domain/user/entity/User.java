@@ -12,7 +12,7 @@ import org.springframework.util.Assert;
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "users")
-@Getter
+@Data
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
