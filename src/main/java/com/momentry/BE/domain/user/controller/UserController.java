@@ -1,6 +1,7 @@
 package com.momentry.BE.domain.user.controller;
 
 import com.momentry.BE.domain.user.dto.GetCurrentUserAlbumListResponse;
+import com.momentry.BE.domain.user.dto.GetCurrentUserLikedFileListResponse;
 import com.momentry.BE.domain.user.dto.LoginResponse;
 import com.momentry.BE.domain.user.dto.UserUpdateResponse;
 import com.momentry.BE.domain.user.service.master.UserMasterService;
@@ -31,9 +32,20 @@ public class UserController {
         return ApiResponse.ofSuccess(request);
     }
 
+    // TODO : 이것도 페이지네이션 필요함???
     @GetMapping("/{userId}/albums")
     public ResponseEntity<ApiResponse<GetCurrentUserAlbumListResponse>> getCurrentUserAlbumList(@PathVariable Long userId){
         GetCurrentUserAlbumListResponse response = userMasterService.getCurrentUserAlbums(userId);
+
+        return ApiResponse.ofSuccess(response);
+    }
+
+    @GetMapping("/{userId}/like-files")
+    public ResponseEntity<ApiResponse<GetCurrentUserLikedFileListResponse>> getCurrentUserLikedFileList(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size){
+        GetCurrentUserLikedFileListResponse response = userMasterService.getCurrentUserLikedFile(userId, page, size);
 
         return ApiResponse.ofSuccess(response);
     }

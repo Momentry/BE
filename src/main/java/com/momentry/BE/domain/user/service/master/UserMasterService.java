@@ -6,14 +6,21 @@ import com.momentry.BE.domain.album.dto.AlbumUrlDto;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
 import com.momentry.BE.domain.album.service.AlbumService;
+import com.momentry.BE.domain.file.dto.LikedFileDto;
+import com.momentry.BE.domain.file.entity.File;
+import com.momentry.BE.domain.file.repository.FileLikeRepository;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import com.momentry.BE.domain.user.dto.GetCurrentUserAlbumListResponse;
+import com.momentry.BE.domain.user.dto.GetCurrentUserLikedFileListResponse;
 import com.momentry.BE.domain.user.dto.LoginResponse;
 import com.momentry.BE.domain.user.dto.UserUpdateResponse;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.service.sub.AlertPreferenceService;
 import com.momentry.BE.domain.user.service.sub.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,8 +35,11 @@ public class UserMasterService {
     private final UserService userService;
     private final AlertPreferenceService alertPreferenceService;
     private final AlbumService albumService;
+    
+    // TODO : 나중에 서비스 레이어가 나오면 교체하기
     private final AlbumMemberRepository albumMemberRepository;
     private final FileRepository fileRepository;
+    private final FileLikeRepository fileLikeRepository;
 
     @Transactional
     public UserUpdateResponse updateUser(Long userId, MultipartFile file, String newUsername){
@@ -98,5 +108,23 @@ public class UserMasterService {
         }).toList();
 
         return new GetCurrentUserAlbumListResponse(albumHeaders);
+    }
+
+    @Transactional(readOnly = true)
+    public GetCurrentUserLikedFileListResponse getCurrentUserLikedFile(Long userId, int page, int size){
+        User user = userService.getCurrentUser(userId);
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        // 사용자의 좋아요 목록에 있는 파일 리스트를 좋아요의 최신순으로 가져오기
+        Page<File> likedFiles = fileLikeRepository.findLikedFileByUserId(user.getId(), pageable);
+
+        // Dto로 가공하기
+        List<LikedFileDto> likedFileListDto = likedFiles.getContent().stream()
+                .map(LikedFileDto::new)
+                .toList();
+        
+        // 반환하기
+        return new GetCurrentUserLikedFileListResponse(likedFileListDto);
     }
 }
