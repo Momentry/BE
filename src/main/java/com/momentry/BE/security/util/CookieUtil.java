@@ -3,7 +3,9 @@ package com.momentry.BE.security.util;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+@Component
 public class CookieUtil {
     @Value("${cookie.name.refresh}")
     public String REFRESH_TOKEN_NAME;
