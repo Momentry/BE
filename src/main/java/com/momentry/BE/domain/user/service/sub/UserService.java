@@ -1,4 +1,4 @@
-package com.momentry.BE.domain.user.service;
+package com.momentry.BE.domain.user.service.sub;
 
 import com.momentry.BE.domain.user.dto.OidcClaims;
 import com.momentry.BE.domain.user.dto.UserUpdateResponse;
@@ -17,8 +17,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Map;
-
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -28,6 +26,14 @@ public class UserService {
     // base method - read
     public User getUser(Long userId){
         return userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+    }
+
+    public User getCurrentUser(Long userId){
+        if(!userId.equals(SecurityUtil.getCurrentUserId())){
+            throw new MissmatchUserException();
+        }
+
+        return getUser(userId);
     }
 
     // base method - create & update
@@ -68,11 +74,7 @@ public class UserService {
 
     // 정보 수정
     public UserUpdateResponse update(Long userId, MultipartFile file, String newUsername){
-        if(!userId.equals(SecurityUtil.getCurrentUserId())){
-            throw new MissmatchUserException();
-        }
-
-        User currentUser = getUser(userId);
+        User currentUser = getCurrentUser(userId);
 
         // 파일이 있으면 S3 업로드 및 프로필 이미지 URL 업데이트
         // TODO : S3 업로드 기능 구현 시 적용할 예정

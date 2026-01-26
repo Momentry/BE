@@ -1,4 +1,4 @@
-package com.momentry.BE.domain.user.service;
+package com.momentry.BE.domain.user.service.master;
 
 import com.momentry.BE.domain.user.dto.LoginRequest;
 import com.momentry.BE.domain.user.dto.LoginResponse;
@@ -8,10 +8,11 @@ import com.momentry.BE.domain.user.entity.AlertPreference;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.exception.InvalidTokenException;
 import com.momentry.BE.domain.user.exception.TokenNotFoundException;
+import com.momentry.BE.domain.user.service.sub.AlertPreferenceService;
+import com.momentry.BE.domain.user.service.sub.UserService;
 import com.momentry.BE.domain.user.validator.IdTokenValidator;
 import com.momentry.BE.security.util.CookieUtil;
 import com.momentry.BE.security.util.JwtUtil;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthMasterService {
     private final UserService userService;
     private final AlertPreferenceService alertPreferenceService;
     private final IdTokenValidator idTokenValidator;
