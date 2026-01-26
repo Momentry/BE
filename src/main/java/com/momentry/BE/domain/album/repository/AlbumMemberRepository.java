@@ -13,12 +13,12 @@ import com.momentry.BE.domain.album.entity.AlbumMember;
 @Repository
 public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> {
 
-    @Query("SELECT am FROM AlbumMember am JOIN FETCH am.permission WHERE am.album.id = :albumId AND am.user.id = :userId")
+    @Query("SELECT am FROM AlbumMember am WHERE am.album.id = :albumId AND am.user.id = :userId")
     Optional<AlbumMember> findByAlbumIdAndUserId(@Param("albumId") Long albumId, @Param("userId") Long userId);
 
-    @Query("SELECT am FROM AlbumMember am JOIN FETCH am.album JOIN FETCH am.permission WHERE am.album.id = :albumId AND am.user.id = :userId")
+    @Query("SELECT am FROM AlbumMember am JOIN FETCH am.album WHERE am.album.id = :albumId AND am.user.id = :userId")
     Optional<AlbumMember> findByAlbumIdAndUserIdWithAlbum(@Param("albumId") Long albumId, @Param("userId") Long userId);
 
-    @Query("SELECT am FROM AlbumMember am JOIN FETCH am.user JOIN FETCH am.permission WHERE am.album.id = :albumId")
+    @Query("SELECT am FROM AlbumMember am JOIN FETCH am.user WHERE am.album.id = :albumId")
     List<AlbumMember> findByAlbumIdWithUser(@Param("albumId") Long albumId);
 }

@@ -19,7 +19,7 @@ public interface AlbumRepository extends JpaRepository<Album, Long> {
      */
     Optional<Album> findByName(String name);
 
-    @Query("SELECT a FROM Album a JOIN FETCH a.members m JOIN FETCH m.permission WHERE a.id = :albumId")
+    @Query("SELECT a FROM Album a JOIN FETCH a.members m WHERE a.id = :albumId")
     Optional<Album> findByIdWithMembers(@Param("albumId") Long albumId);
 
     @Query("SELECT a FROM Album a JOIN FETCH a.tags t WHERE a.id = :albumId")
