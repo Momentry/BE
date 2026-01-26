@@ -2,8 +2,8 @@ package com.momentry.BE.domain.file.repository;
 
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileLike;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -20,5 +20,5 @@ public interface FileLikeRepository extends JpaRepository<FileLike, Long> {
             WHERE fl.user.id = :userId
             ORDER BY fl.file.createdAt ASC
             """)
-    Page<File> findLikedFileByUserId(Long userId, Pageable pageable);
+    Slice<File> findLikedFileByUserId(Long userId, Pageable pageable);
 }

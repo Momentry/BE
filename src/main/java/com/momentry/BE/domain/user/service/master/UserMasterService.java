@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -117,7 +118,7 @@ public class UserMasterService {
         Pageable pageable = PageRequest.of(page, size);
 
         // 사용자의 좋아요 목록에 있는 파일 리스트를 좋아요의 최신순으로 가져오기
-        Page<File> likedFiles = fileLikeRepository.findLikedFileByUserId(user.getId(), pageable);
+        Slice<File> likedFiles = fileLikeRepository.findLikedFileByUserId(user.getId(), pageable);
 
         // Dto로 가공하기
         List<LikedFileDto> likedFileListDto = likedFiles.getContent().stream()
@@ -125,6 +126,6 @@ public class UserMasterService {
                 .toList();
         
         // 반환하기
-        return new GetCurrentUserLikedFileListResponse(likedFileListDto);
+        return new GetCurrentUserLikedFileListResponse(likedFileListDto, likedFiles.hasNext());
     }
 }
