@@ -41,6 +41,11 @@ public class AuthMasterService {
         // 2. 사용자 조회 or 회원 가입
         User user = userService.findOrCreateUser(claims, request.getProvider());
 
+        // 2-1. 회원탈퇴 했던 유저라면 활성화
+        if(!user.getIsActive()){
+            userService.restoreUser(user);
+        }
+
         // 3. AlertPreference 조회 or 생성
         AlertPreference alertPreference = alertPreferenceService.getOrCreateAlertPreference(user);
 

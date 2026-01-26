@@ -13,6 +13,14 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("""
+            SELECT u
+            FROM User u
+            WHERE u.isActive = true
+            AND u.id = :userId
+            """)
+    Optional<User> findActiveUserById(Long userId);
+
+    @Query("""
         SELECT u
         FROM User u
         WHERE u.isActive = true

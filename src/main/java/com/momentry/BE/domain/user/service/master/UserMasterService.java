@@ -52,7 +52,7 @@ public class UserMasterService {
     public void signOut(Long userId){
         User currentUser = userService.getCurrentUser(userId);
 
-        userService.deleteUser(currentUser);
+        userService.withdrawUser(currentUser);
     }
 
     @Transactional

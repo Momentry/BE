@@ -25,7 +25,7 @@ public class UserService {
 
     // base method - read
     public User getUser(Long userId){
-        return userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        return userRepository.findActiveUserById(userId).orElseThrow(UserNotFoundException::new);
     }
 
     public User getCurrentUser(Long userId){
@@ -47,8 +47,14 @@ public class UserService {
     }
 
     // 회원 탈퇴 - soft delete
-    public void deleteUser(User user){
+    public void withdrawUser(User user) {
         user.setIsActive(false);
+        saveUser(user);
+    }
+
+    // 회원 복구
+    public void restoreUser(User user) {
+        user.setIsActive(true);
         saveUser(user);
     }
 
@@ -84,7 +90,7 @@ public class UserService {
     }
 
     // 회원 가입
-    private User joinUser(OidcClaims claims, String provider){
+    public User joinUser(OidcClaims claims, String provider){
         String sub = claims.getSub();
         String email = claims.getEmail();
         String name = claims.getName();
@@ -93,7 +99,8 @@ public class UserService {
         AccountPlan accountPlan = accountPlanRepository
                                     .findByPlan(UserAccountPlan.FREE_USER.getPlan())
                                     .orElseThrow(AccountPlanNotFoundException::new);
-                                    
+
+
         User newUser = new User(email, name, provider, sub, picture, accountPlan);
 
         saveUser(newUser);
