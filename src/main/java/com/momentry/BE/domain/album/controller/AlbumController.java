@@ -101,7 +101,7 @@ public class AlbumController {
         return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 정보 수정 성공", null);
     }
 
-    @PostMapping("/{albumId}/leave")
+    @DeleteMapping("/{albumId}/leave")
     public ResponseEntity<ApiResponse<Object>> leaveAlbum(
             @PathVariable Long albumId, Long userId) {
 
