@@ -26,6 +26,9 @@ public class GoogleTokenValidator implements OauthValidator {
     @Value("${oauth.google.client-id}")
     private String googleClientId;
 
+    @Value("${oauth.google.issuer}")
+    private String googleIssuer;
+
     @Override
     public OidcClaims validate(String idToken) {
         try {
@@ -42,7 +45,7 @@ public class GoogleTokenValidator implements OauthValidator {
             
             // 추가 검증: issuer 확인
             String issuer = payload.getIssuer();
-            if (!("accounts.google.com".equals(issuer) || "https://accounts.google.com".equals(issuer))) {
+            if (!(issuer.contains(googleIssuer))) {
                 throw new InvalidTokenException("Invalid issuer: " + issuer);
             }
 
