@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +22,9 @@ import jakarta.validation.constraints.NotNull;
 
 import com.momentry.BE.domain.album.dto.AlbumMemberInviteRequest;
 import com.momentry.BE.domain.album.dto.AlbumMemberInviteResult;
+import com.momentry.BE.domain.album.dto.AlbumCreationRequest;
+import com.momentry.BE.domain.album.dto.AlbumCreationResponse;
+import com.momentry.BE.domain.album.dto.AlbumDetailResponse;
 import com.momentry.BE.domain.album.dto.AlbumTagResult;
 import com.momentry.BE.domain.album.dto.AlbumMemberPermissionUpdateRequest;
 import com.momentry.BE.domain.album.dto.TagCreationRequest;
@@ -37,10 +41,78 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/albums")
 @Validated
 public class AlbumController {
-    
-    
+
     private final AlbumService albumService;
     private final CloudFrontSignedCookieService cloudFrontSignedCookieService;
+
+    /**
+     * 앨범 생성
+     * 
+     * @param request 앨범 생성 요청 (albumName, albumCoverImage)
+     * @param userId  사용자 ID (추후 시큐리티 적용 시 @AuthenticationPrincipal로 변경)
+     * @return 앨범 생성 응답 (albumId, albumName)
+     */
+    @PostMapping
+    public ResponseEntity<ApiResponse<AlbumCreationResponse>> createAlbum(
+            @ModelAttribute AlbumCreationRequest request,
+            Long userId) {
+
+        AlbumCreationResponse response = albumService.createAlbum(
+                request.getAlbumName(),
+                request.getAlbumCoverImage(),
+                userId);
+        return ApiResponse.ofSuccess(HttpStatus.CREATED, "앨범 생성 성공", response);
+    }
+
+    /**
+     * 앨범 상세 정보 조회
+     * 
+     * @param albumId 앨범 ID
+     * @param userId  사용자 ID (추후 시큐리티 적용 시 @AuthenticationPrincipal로 변경)
+     * @return 앨범 상세 정보 (앨범 이름, 커버 이미지, 파일 개수, 멤버 목록, 태그 목록)
+     */
+    @GetMapping("/{albumId}")
+    public ResponseEntity<ApiResponse<AlbumDetailResponse>> getAlbum(
+            @PathVariable Long albumId,
+            Long userId) {
+        AlbumDetailResponse response = albumService.getAlbumDetail(albumId, userId);
+        return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 정보 조회 성공", response);
+    }
+
+    /**
+     * 앨범 정보 수정
+     * 
+     * @param albumId 앨범 ID
+     * @param request 앨범 수정 요청 (albumName, albumCoverImage) - 선택적
+     * @param userId  사용자 ID (추후 시큐리티 적용 시 @AuthenticationPrincipal로 변경)
+     * @return 앨범 수정 응답
+     */
+    @PostMapping("/{albumId}")
+    public ResponseEntity<ApiResponse<Object>> updateAlbum(
+            @PathVariable Long albumId,
+            @ModelAttribute AlbumCreationRequest request,
+            Long userId) {
+
+        albumService.updateAlbum(
+                albumId,
+                request.getAlbumName(),
+                request.getAlbumCoverImage(),
+                userId);
+        return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 정보 수정 성공", null);
+    }
+
+    @DeleteMapping("/{albumId}/leave")
+    public ResponseEntity<ApiResponse<Object>> leaveAlbum(
+            @PathVariable Long albumId, Long userId) {
+
+        boolean isAlbumDeleted = albumService.leaveAlbum(albumId, userId);
+
+        String message = isAlbumDeleted
+                ? "앨범 나가기 성공, 잔여 멤버 0으로 앨범 삭제"
+                : "앨범 나가기 성공";
+
+        return ApiResponse.ofSuccess(HttpStatus.OK, message, null);
+    }
 
     @PostMapping("/{albumId}/tags")
     public ResponseEntity<ApiResponse<Object>> createTag(@PathVariable Long albumId,
@@ -48,9 +120,10 @@ public class AlbumController {
         albumService.createTag(albumId, request.getTagName(), userId);
         return ApiResponse.ofSuccess();
     }
-    
+
     @DeleteMapping("/{albumId}/tags/{tagId}")
-    public ResponseEntity<ApiResponse<Object>> deleteTag(@PathVariable Long albumId, @PathVariable Long tagId, Long userId) {
+    public ResponseEntity<ApiResponse<Object>> deleteTag(@PathVariable Long albumId, @PathVariable Long tagId,
+            Long userId) {
         albumService.deleteTag(albumId, tagId, userId);
         return ApiResponse.ofSuccess();
     }
@@ -61,7 +134,7 @@ public class AlbumController {
         albumService.updateTag(albumId, tagId, request.getTagName(), userId);
         return ApiResponse.ofSuccess();
     }
-    
+
     @GetMapping("/{albumId}/tags")
     public ResponseEntity<ApiResponse<List<AlbumTagResult>>> getTags(@PathVariable Long albumId, Long userId) {
         List<AlbumTagResult> tags = albumService.getTags(albumId, userId);
@@ -77,7 +150,7 @@ public class AlbumController {
      * @ImplNote 앨범의 모든 파일 목록 또는 태그에 해당하는 파일 목록을 반환합니다.
      * 
      * @param albumId 앨범 아이디
-     * @param tagId 태그 아이디
+     * @param tagId   태그 아이디
      * @return 파일 목록(파일 아이디, 파일 URL, 썸네일 URL, 디스플레이 URL, 파일 타입)
      */
     @GetMapping("/{albumId}/files")

@@ -22,6 +22,9 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
     @Query("SELECT am FROM AlbumMember am JOIN FETCH am.album WHERE am.album.id = :albumId AND am.user.id = :userId")
     Optional<AlbumMember> findByAlbumIdAndUserIdWithAlbum(@Param("albumId") Long albumId, @Param("userId") Long userId);
 
+    @Query("SELECT am FROM AlbumMember am JOIN FETCH am.user WHERE am.album.id = :albumId")
+    List<AlbumMember> findByAlbumIdWithUser(@Param("albumId") Long albumId);
+
     @Query("SELECT am.album FROM AlbumMember am WHERE am.user.id = :userId")
     List<Album> findAlbumsByUserId(Long userId);
 

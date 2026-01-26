@@ -37,4 +37,19 @@ public interface FileRepository extends JpaRepository<File, Long> {
     @Query("SELECT f.album.id AS albumId, f.thumbUrl AS contentUrl FROM File f " +
             "WHERE f.album.id IN :albumIds ORDER BY f.createdAt DESC")
     List<AlbumUrlDto> findThumbnailsByAlbumIds(List<Long> albumIds);
+
+    /**
+     * 앨범의 파일 개수를 조회
+     *
+     * @param album 앨범
+     * @return 파일 개수
+     */
+    long countByAlbum(Album album);
+
+    /**
+     * 앨범의 모든 파일 삭제
+     *
+     * @param album 앨범
+     */
+    void deleteByAlbum(Album album);
 }

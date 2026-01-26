@@ -59,6 +59,11 @@ public class ApiResponse<T> {
         return ofSuccess(statusCode, null);
     }
 
+    // 성공 응답 (Http 상태 코드와 커스텀 메시지, 데이터가 있는 경우)
+    public static <T> ResponseEntity<ApiResponse<T>> ofSuccess(HttpStatus statusCode, String message, T data) {
+        return ResponseEntity.status(statusCode).body(createResponse(statusCode.value(), message, "SUCCESS", data));
+    }
+
     // 요청 실패 응답 (4xx 계열)
     public static ResponseEntity<ApiResponse<Void>> ofFail(int statusCode, String message) {
         return ResponseEntity.status(statusCode).body(createResponse(statusCode, message, "FAIL", null));
