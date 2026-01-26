@@ -24,4 +24,11 @@ public class AuthController {
 
         return ApiResponse.ofSuccess(responseData);
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response){
+        authService.logout(response);
+
+        return ApiResponse.ofSuccess();
+    }
 }

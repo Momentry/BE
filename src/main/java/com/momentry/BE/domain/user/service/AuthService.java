@@ -6,6 +6,7 @@ import com.momentry.BE.domain.user.dto.OidcClaims;
 import com.momentry.BE.domain.user.entity.AlertPreference;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.validator.IdTokenValidator;
+import com.momentry.BE.security.util.CookieUtil;
 import com.momentry.BE.security.util.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,6 +22,7 @@ public class AuthService {
     private final AlertPreferenceService alertPreferenceService;
     private final IdTokenValidator idTokenValidator;
     private final JwtUtil jwtUtil;
+    private final CookieUtil cookieUtil;
 
     @Value("${jwt.refresh-token-expiration}")
     private int refreshTokenExpiration;
@@ -41,15 +43,12 @@ public class AuthService {
         String refreshToken = jwtUtil.generateRefreshToken(user.getId());
 
         // 5. refreshToken은 쿠키에 저장하기
-        Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
-        refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(false); // HTTPS 사용 시 true
-        refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setMaxAge(refreshTokenExpiration);
-        response.addCookie(refreshTokenCookie);
+        cookieUtil.saveRefreshTokenCookie(response, refreshToken, refreshTokenExpiration);
 
         return new LoginResponse(user, alertPreference, accessToken);
     }
 
-    
+    public void logout(HttpServletResponse response){
+        cookieUtil.deleteRefreshTokenCookie(response);
+    }
 }
