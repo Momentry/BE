@@ -15,10 +15,12 @@ import com.momentry.BE.security.util.CookieUtil;
 import com.momentry.BE.security.util.JwtUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthMasterService {
@@ -45,6 +47,11 @@ public class AuthMasterService {
         // 4. JWT 토큰 발급 (백엔드 JWT)
         String accessToken = jwtUtil.generateAccessToken(user.getId(), user.getUsername());
         String refreshToken = jwtUtil.generateRefreshToken(user.getId());
+
+        log.info("userId : " + user.getId());
+        log.info("userName : " + user.getUsername());
+        log.info("access : " + accessToken);
+        log.info("refresh : " + refreshToken);
 
         // 5. refreshToken은 쿠키에 저장하기
         cookieUtil.saveRefreshTokenCookie(response, refreshToken, refreshTokenExpiration);

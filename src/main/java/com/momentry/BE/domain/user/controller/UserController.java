@@ -7,6 +7,7 @@ import com.momentry.BE.domain.user.dto.UserUpdateResponse;
 import com.momentry.BE.domain.user.service.master.UserMasterService;
 import com.momentry.BE.global.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +24,13 @@ public class UserController {
         UserUpdateResponse userUpdateResponse = userMasterService.updateUser(userId, file, newUsername);
 
         return ApiResponse.ofSuccess(userUpdateResponse);
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<ApiResponse<Void>> signOut(@PathVariable Long userId){
+        userMasterService.signOut(userId);
+
+        return ApiResponse.ofSuccess(HttpStatus.NO_CONTENT, null);
     }
 
     @PatchMapping("/{userId}/alert")

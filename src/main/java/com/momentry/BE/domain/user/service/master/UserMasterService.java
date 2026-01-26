@@ -47,6 +47,14 @@ public class UserMasterService {
         return userService.update(userId, file, newUsername);
     }
 
+    // SOFT DELETE
+    // TODO : 30일 이후에 관련 엔티티 삭제 로직 추가
+    public void signOut(Long userId){
+        User currentUser = userService.getCurrentUser(userId);
+
+        userService.deleteUser(currentUser);
+    }
+
     @Transactional
     public void updateAlertPreference(LoginResponse.AlertDto request, Long userId){
         User user = userService.getCurrentUser(userId);

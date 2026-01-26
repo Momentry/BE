@@ -46,6 +46,35 @@ public class UserService {
         }
     }
 
+    // 회원 탈퇴 - soft delete
+    public void deleteUser(User user){
+        user.setIsActive(false);
+        saveUser(user);
+    }
+
+    // 정보 수정
+    public UserUpdateResponse update(Long userId, MultipartFile file, String newUsername){
+        User currentUser = getCurrentUser(userId);
+
+        // 파일이 있으면 S3 업로드 및 프로필 이미지 URL 업데이트
+        // TODO : S3 업로드 기능 구현 시 적용할 예정
+        //        if (file != null && !file.isEmpty()) {
+        //             fileValidator.image(file);
+        //             String fileUrl = s3Util.upload(file, FileCategory.IMAGE);
+        //             user.setProfileImageUrl(fileUrl);
+        //        }
+
+        // 닉네임이 있으면 업데이트
+        if (newUsername != null && !newUsername.trim().isEmpty()) {
+            currentUser.setUsername(newUsername);
+        }
+
+        // 업데이트 반영
+        saveUser(currentUser);
+
+        return new UserUpdateResponse(currentUser.getUsername(), currentUser.getProfileImageUrl());
+    }
+
     // 사용자 조회 -> 없으면 회원 가입 -> 반환
     public User findOrCreateUser(OidcClaims claims, String provider) {
         String sub = claims.getSub();
@@ -72,26 +101,5 @@ public class UserService {
         return newUser;
     }
 
-    // 정보 수정
-    public UserUpdateResponse update(Long userId, MultipartFile file, String newUsername){
-        User currentUser = getCurrentUser(userId);
 
-        // 파일이 있으면 S3 업로드 및 프로필 이미지 URL 업데이트
-        // TODO : S3 업로드 기능 구현 시 적용할 예정
-        //        if (file != null && !file.isEmpty()) {
-        //             fileValidator.image(file);
-        //             String fileUrl = s3Util.upload(file, FileCategory.IMAGE);
-        //             user.setProfileImageUrl(fileUrl);
-        //        }
-
-        // 닉네임이 있으면 업데이트
-        if (newUsername != null && !newUsername.trim().isEmpty()) {
-            currentUser.setUsername(newUsername);
-        }
-
-        // 업데이트 반영
-        saveUser(currentUser);
-
-        return new UserUpdateResponse(currentUser.getUsername(), currentUser.getProfileImageUrl());
-    }
 }
