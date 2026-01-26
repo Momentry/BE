@@ -49,15 +49,10 @@ public class AlbumController {
             @ModelAttribute AlbumCreationRequest request,
             Long userId) {
 
-        // S3 업로드 서비스 구현 시 여기서 파일 업로드 처리
-        // 현재는 파일이 있어도 업로드하지 않고 default 이미지 사용
-        String coverImageUrl = null;
-        if (request.getAlbumCoverImage() != null && !request.getAlbumCoverImage().isEmpty()) {
-            // 나중에 S3 업로드 서비스를 만들면 여기서 업로드하고 URL을 받아옴
-            // coverImageUrl = s3UploadService.uploadFile(request.getAlbumCoverImage());
-        }
-
-        AlbumCreationResponse response = albumService.createAlbum(request.getAlbumName(), coverImageUrl, userId);
+        AlbumCreationResponse response = albumService.createAlbum(
+                request.getAlbumName(),
+                request.getAlbumCoverImage(),
+                userId);
         return ApiResponse.ofSuccess(HttpStatus.CREATED, "앨범 생성 성공", response);
     }
 
@@ -90,15 +85,11 @@ public class AlbumController {
             @ModelAttribute AlbumCreationRequest request,
             Long userId) {
 
-        // S3 업로드 서비스 구현 시 여기서 파일 업로드 처리
-        // 현재는 파일이 있어도 업로드하지 않고 기존 이미지 유지
-        String coverImageUrl = null;
-        if (request.getAlbumCoverImage() != null && !request.getAlbumCoverImage().isEmpty()) {
-            // 나중에 S3 업로드 서비스를 만들면 여기서 업로드하고 URL을 받아옴
-            // coverImageUrl = s3UploadService.uploadFile(request.getAlbumCoverImage());
-        }
-
-        albumService.updateAlbum(albumId, request.getAlbumName(), coverImageUrl, userId);
+        albumService.updateAlbum(
+                albumId,
+                request.getAlbumName(),
+                request.getAlbumCoverImage(),
+                userId);
         return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 정보 수정 성공", null);
     }
 

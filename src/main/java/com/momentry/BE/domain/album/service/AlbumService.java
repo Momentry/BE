@@ -63,13 +63,14 @@ public class AlbumService {
     /**
      * 앨범 생성
      * 
-     * @param albumName     앨범 이름
-     * @param coverImageUrl 커버 이미지 URL (null이면 default 이미지 사용)
-     * @param userId        사용자 ID (앨범 생성자)
+     * @param albumName  앨범 이름
+     * @param coverImage 커버 이미지 파일 (null이면 default 이미지 사용)
+     * @param userId     사용자 ID (앨범 생성자)
      * @return 앨범 생성 응답
      */
     @Transactional
-    public AlbumCreationResponse createAlbum(String albumName, String coverImageUrl, Long userId) {
+    public AlbumCreationResponse createAlbum(String albumName,
+            org.springframework.web.multipart.MultipartFile coverImage, Long userId) {
         // 앨범 이름 중복 체크
         if (albumRepository.findByName(albumName).isPresent()) {
             throw new DuplicateAlbumNameException();
@@ -79,10 +80,13 @@ public class AlbumService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        // 커버 이미지 URL 설정 (없으면 default 이미지 사용)
-        String finalCoverImageUrl = (coverImageUrl != null && !coverImageUrl.isBlank())
-                ? coverImageUrl
-                : DEFAULT_COVER_IMAGE_URL;
+        // 커버 이미지 URL 설정
+        String finalCoverImageUrl = DEFAULT_COVER_IMAGE_URL;
+        if (coverImage != null && !coverImage.isEmpty()) {
+            // S3 업로드 서비스 구현 시 여기서 파일 업로드 처리
+            // finalCoverImageUrl = s3UploadService.uploadFile(coverImage);
+            // 현재는 파일이 있어도 업로드하지 않고 default 이미지 사용
+        }
 
         // 앨범 생성
         Album album = Album.builder()
@@ -111,13 +115,14 @@ public class AlbumService {
     /**
      * 앨범 정보 수정
      * 
-     * @param albumId       앨범 ID
-     * @param albumName     앨범 이름 (null이면 업데이트 안함)
-     * @param coverImageUrl 커버 이미지 URL (null이면 업데이트 안함)
-     * @param userId        사용자 ID
+     * @param albumId    앨범 ID
+     * @param albumName  앨범 이름 (null이면 업데이트 안함)
+     * @param coverImage 커버 이미지 파일 (null이면 업데이트 안함)
+     * @param userId     사용자 ID
      */
     @Transactional
-    public void updateAlbum(Long albumId, String albumName, String coverImageUrl, Long userId) {
+    public void updateAlbum(Long albumId, String albumName, org.springframework.web.multipart.MultipartFile coverImage,
+            Long userId) {
         // 권한 확인 (편집 권한 필요)
         AlbumMember albumMember = getAlbumPermission(albumId, userId);
         requireEditPermission(albumMember.getPermission().getPermission());
@@ -138,9 +143,12 @@ public class AlbumService {
             album.setName(albumName);
         }
 
-        // 커버 이미지 URL 업데이트 (제공된 경우)
-        if (coverImageUrl != null && !coverImageUrl.isBlank()) {
-            album.setCoverImageUrl(coverImageUrl);
+        // 커버 이미지 업데이트 (제공된 경우)
+        if (coverImage != null && !coverImage.isEmpty()) {
+            // S3 업로드 서비스 구현 시 여기서 파일 업로드 처리
+            // String coverImageUrl = s3UploadService.uploadFile(coverImage);
+            // album.setCoverImageUrl(coverImageUrl);
+            // 현재는 파일이 있어도 업로드하지 않고 기존 이미지 유지
         }
 
         albumRepository.save(album);
