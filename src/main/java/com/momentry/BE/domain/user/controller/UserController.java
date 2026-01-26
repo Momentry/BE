@@ -1,5 +1,6 @@
 package com.momentry.BE.domain.user.controller;
 
+import com.momentry.BE.domain.user.dto.GetCurrentUserAlbumListResponse;
 import com.momentry.BE.domain.user.dto.LoginResponse;
 import com.momentry.BE.domain.user.dto.UserUpdateResponse;
 import com.momentry.BE.domain.user.service.master.UserMasterService;
@@ -28,5 +29,12 @@ public class UserController {
         userMasterService.updateAlertPreference(request, userId);
 
         return ApiResponse.ofSuccess(request);
+    }
+
+    @GetMapping("/{userId}/albums")
+    public ResponseEntity<ApiResponse<GetCurrentUserAlbumListResponse>> getCurrentUserAlbumList(@PathVariable Long userId){
+        GetCurrentUserAlbumListResponse response = userMasterService.getCurrentUserAlbums(userId);
+
+        return ApiResponse.ofSuccess(response);
     }
 }

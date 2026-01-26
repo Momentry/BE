@@ -2,6 +2,8 @@ package com.momentry.BE.domain.file.repository;
 
 import java.util.List;
 
+import com.momentry.BE.domain.album.dto.AlbumCountDto;
+import com.momentry.BE.domain.album.dto.AlbumUrlDto;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -27,4 +29,12 @@ public interface FileRepository extends JpaRepository<File, Long> {
                                      @Param("cursorCreatedAt") java.time.LocalDateTime cursorCreatedAt,
                                      @Param("cursorId") Long cursorId,
                                      Pageable pageable);
+
+    @Query("SELECT f.album.id AS albumId, COUNT(f) AS count FROM File f " +
+            "WHERE f.album.id IN :albumIds GROUP BY f.album.id")
+    List<AlbumCountDto> countFilesByAlbumIds(List<Long> albumIds);
+
+    @Query("SELECT f.album.id AS albumId, f.thumbUrl AS contentUrl FROM File f " +
+            "WHERE f.album.id IN :albumIds ORDER BY f.createdAt DESC")
+    List<AlbumUrlDto> findThumbnailsByAlbumIds(List<Long> albumIds);
 }

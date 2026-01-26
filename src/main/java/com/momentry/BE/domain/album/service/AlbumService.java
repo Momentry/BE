@@ -82,6 +82,11 @@ public class AlbumService {
         }
     }
 
+
+    public List<Album> getJoinedAlbums(User user){
+        return albumMemberRepository.findAlbumsByUserId(user.getId());
+    }
+
     /**
      * 앨범 멤버 초대
      *
