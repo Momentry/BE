@@ -5,7 +5,7 @@ import com.momentry.BE.global.exception.BusinessException;
 public class InvalidTokenException extends BusinessException {
     
     public InvalidTokenException() {
-        super("Invalid ID token", 400);
+        super("Invalid token", 400);
     }
     
     public InvalidTokenException(String message) {

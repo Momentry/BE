@@ -3,8 +3,11 @@ package com.momentry.BE.domain.user.service;
 import com.momentry.BE.domain.user.dto.LoginRequest;
 import com.momentry.BE.domain.user.dto.LoginResponse;
 import com.momentry.BE.domain.user.dto.OidcClaims;
+import com.momentry.BE.domain.user.dto.RefreshResponse;
 import com.momentry.BE.domain.user.entity.AlertPreference;
 import com.momentry.BE.domain.user.entity.User;
+import com.momentry.BE.domain.user.exception.InvalidTokenException;
+import com.momentry.BE.domain.user.exception.TokenNotFoundException;
 import com.momentry.BE.domain.user.validator.IdTokenValidator;
 import com.momentry.BE.security.util.CookieUtil;
 import com.momentry.BE.security.util.JwtUtil;
@@ -50,5 +53,25 @@ public class AuthService {
 
     public void logout(HttpServletResponse response){
         cookieUtil.deleteRefreshTokenCookie(response);
+    }
+
+    public RefreshResponse refresh(String refreshToken, HttpServletResponse response){
+        if (refreshToken == null) {
+            throw new TokenNotFoundException();
+        }
+
+        if (jwtUtil.isTokenInvalid(refreshToken)) {
+            throw new InvalidTokenException();
+        }
+
+        Long userId = jwtUtil.extractUserId(refreshToken);
+        User user = userService.getUser(userId);
+
+        String newRefreshToken = jwtUtil.generateRefreshToken(userId);
+        cookieUtil.saveRefreshTokenCookie(response, newRefreshToken, refreshTokenExpiration);
+
+        String newAccessToken = jwtUtil.generateAccessToken(user.getId(), user.getUsername());
+
+        return new RefreshResponse(newAccessToken);
     }
 }
