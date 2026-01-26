@@ -35,4 +35,11 @@ public interface FileRepository extends JpaRepository<File, Long> {
    * @return 파일 개수
    */
   long countByAlbum(Album album);
+
+  /**
+   * 앨범의 모든 파일 삭제
+   * 
+   * @param album 앨범
+   */
+  void deleteByAlbum(Album album);
 }

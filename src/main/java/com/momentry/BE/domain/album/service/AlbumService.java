@@ -22,6 +22,7 @@ import com.momentry.BE.domain.album.entity.AlbumMember;
 import com.momentry.BE.domain.album.entity.AlbumPermission;
 import com.momentry.BE.domain.album.entity.AlbumTag;
 import com.momentry.BE.domain.album.exception.AlbumNotFoundException;
+import com.momentry.BE.domain.album.exception.AlbumMustHaveManagerException;
 import com.momentry.BE.domain.album.exception.DuplicateAlbumNameException;
 import com.momentry.BE.domain.album.exception.DuplicateTagException;
 import com.momentry.BE.domain.album.exception.NoAlbumEditPermissionException;
@@ -145,22 +146,66 @@ public class AlbumService {
         albumRepository.save(album);
     }
 
-    // /**
-    // * 앨범 나가기
-    // *
-    // * @param albumId 앨범 ID
-    // * @param userId 사용자 ID
-    // */
-    // @Transactional
-    // public void leaveAlbum(Long albumId, Long userId) {
-    // AlbumMember albumMember = getAlbumPermission(albumId, userId);
-    // List<AlbumMember> albumMembers =
-    // albumMemberRepository.findByAlbumId(albumId);
-    // if (albumMember.getPermission().getPermission().equals("MANAGER")
-    // && albumMember.getUser().getId().equals(userId)) {
-    // albumMemberRepository.delete(albumMember);
-    // }
-    // }
+    /**
+     * 앨범 나가기
+     *
+     * @param albumId 앨범 ID
+     * @param userId  사용자 ID
+     * @return 앨범이 삭제되었는지 여부 (true: 삭제됨, false: 일반 나가기)
+     */
+    @Transactional
+    public boolean leaveAlbum(Long albumId, Long userId) {
+        AlbumMember albumMember = getAlbumPermission(albumId, userId);
+        List<AlbumMember> albumMembers = albumMemberRepository.findByAlbumIdWithUser(albumId);
+
+        // 1. 나 말고 다른 MANAGER 있나?
+        boolean hasOtherManager = albumMembers.stream()
+                .filter(member -> !member.getUser().getId().equals(userId))
+                .anyMatch(member -> member.getPermission().getPermission().equals("MANAGER"));
+
+        if (hasOtherManager) {
+            // 다른 MANAGER가 있으면 나가기 가능
+            albumMemberRepository.delete(albumMember);
+            return false;
+        }
+
+        // 2. 다른 MANAGER 없어 (본인이 유일한 MANAGER)
+        // 내가 유일한 멤버야?
+        if (albumMembers.size() == 1 && albumMember.getUser().getId().equals(userId)) {
+            // 앨범 삭제
+            deleteAlbum(albumId);
+            return true;
+        } else {
+            // 다른 멤버가 있으면 예외 (다음 관리자 지정 필요)
+            throw new AlbumMustHaveManagerException();
+        }
+    }
+
+    /**
+     * 앨범 삭제
+     * 
+     * @param albumId 앨범 ID
+     */
+    @Transactional
+    public void deleteAlbum(Long albumId) {
+        Album album = albumRepository.findById(albumId)
+                .orElseThrow(AlbumNotFoundException::new);
+
+        // 관련 파일 태그 정보 삭제 (FileTagInfo는 File을 참조)
+        // 태그를 먼저 삭제하면 FileTagInfo도 함께 삭제됨 (cascade 또는 외래키 제약조건)
+        List<AlbumTag> tags = albumTagRepository.findByAlbum(album);
+        for (AlbumTag tag : tags) {
+            fileTagInfoRepository.deleteByTag(tag);
+        }
+
+        // 관련 파일 삭제
+        List<File> files = fileRepository.findByAlbumOrderByCreatedAtDescIdDesc(album,
+                PageRequest.of(0, Integer.MAX_VALUE));
+        fileRepository.deleteAll(files);
+
+        // 앨범 삭제 (cascade로 태그와 멤버도 함께 삭제됨)
+        albumRepository.delete(album);
+    }
 
     /**
      * 앨범 태그 생성

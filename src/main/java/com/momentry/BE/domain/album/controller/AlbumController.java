@@ -102,13 +102,18 @@ public class AlbumController {
         return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 정보 수정 성공", null);
     }
 
-    // @PostMapping("/{albumId}/leave")
-    // public ResponseEntity<ApiResponse<Object>> leaveAlbum(
-    // @PathVariable Long albumId, Long userId) {
+    @PostMapping("/{albumId}/leave")
+    public ResponseEntity<ApiResponse<Object>> leaveAlbum(
+            @PathVariable Long albumId, Long userId) {
 
-    // albumService.leaveAlbum(albumId, userId);
-    // return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 나가기 성공", null);
-    // }
+        boolean isAlbumDeleted = albumService.leaveAlbum(albumId, userId);
+
+        String message = isAlbumDeleted
+                ? "앨범 나가기 성공, 잔여 멤버 0으로 앨범 삭제"
+                : "앨범 나가기 성공";
+
+        return ApiResponse.ofSuccess(HttpStatus.OK, message, null);
+    }
 
     @PostMapping("/{albumId}/tags")
     public ResponseEntity<ApiResponse<Object>> createTag(@PathVariable Long albumId,

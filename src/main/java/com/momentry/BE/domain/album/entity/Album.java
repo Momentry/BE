@@ -33,10 +33,10 @@ public class Album {
     @Column(nullable = false, updatable = false) // 생성 시간 보호?
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "album", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "album", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AlbumMember> members = new ArrayList<>();
 
-    @OneToMany(mappedBy = "album", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "album", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AlbumTag> tags = new ArrayList<>();
 
     @Builder
