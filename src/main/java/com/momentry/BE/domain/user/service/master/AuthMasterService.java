@@ -53,11 +53,6 @@ public class AuthMasterService {
         String accessToken = jwtUtil.generateAccessToken(user.getId(), user.getUsername());
         String refreshToken = jwtUtil.generateRefreshToken(user.getId());
 
-        log.info("userId : " + user.getId());
-        log.info("userName : " + user.getUsername());
-        log.info("access : " + accessToken);
-        log.info("refresh : " + refreshToken);
-
         // 5. refreshToken은 쿠키에 저장하기
         cookieUtil.saveRefreshTokenCookie(response, refreshToken, refreshTokenExpiration);
 
