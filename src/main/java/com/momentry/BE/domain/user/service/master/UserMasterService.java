@@ -18,10 +18,7 @@ import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.service.sub.AlertPreferenceService;
 import com.momentry.BE.domain.user.service.sub.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -86,14 +83,14 @@ public class UserMasterService {
                         AlbumCountDto::getCount));
 
         // 각 앨범의 file.thumbUrl을 최신순으로 앨범 별로 가져오기
-        Map<Long, List<String>> memberProfileImageMap = albumMemberRepository.findMemberProfilesByAlbumIds(albumIds)
+        Map<Long, List<String>> memberProfileImageMap = albumMemberRepository.findMemberProfilesByAlbumIds(albumIds, Limit.of(6))
                 .stream()
                 .collect(Collectors.groupingBy(
                         AlbumUrlDto::getAlbumId, // 그룹화 기준 (Key)
                         Collectors.mapping(AlbumUrlDto::getUrl, Collectors.toList()) // 벨류 변환 및 리스트 수집 (Value)
                 ));
 
-        Map<Long, List<String>> fileThumbnailImageMap = fileRepository.findThumbnailsByAlbumIds(albumIds)
+        Map<Long, List<String>> fileThumbnailImageMap = fileRepository.findThumbnailsByAlbumIds(albumIds, Limit.of(6))
                 .stream()
                 .collect(Collectors.groupingBy(
                         AlbumUrlDto::getAlbumId,

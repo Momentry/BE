@@ -34,10 +34,7 @@ import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.SliceImpl;
+import org.springframework.data.domain.*;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -160,7 +157,9 @@ public class UserMasterServiceTest {
         AlbumUrlDto testAlbum2Member2ProfileUrl = new AlbumUrlDto(testAlbum2Id, "https://example.com/profile4.jpg");
         AlbumUrlDto testAlbum2Member3ProfileUrl = new AlbumUrlDto(testAlbum2Id, "https://example.com/profile5.jpg");
 
-        when(albumMemberRepository.findMemberProfilesByAlbumIds(albumIds)).thenReturn(
+        Limit limit = Limit.of(6);
+
+        when(albumMemberRepository.findMemberProfilesByAlbumIds(albumIds, limit)).thenReturn(
                 List.of(
                         testAlbum1Member1ProfileUrl, testAlbum1Member2ProfileUrl,
                         testAlbum2Member1ProfileUrl, testAlbum2Member2ProfileUrl,
@@ -175,7 +174,7 @@ public class UserMasterServiceTest {
         AlbumUrlDto testAlbum2File3ThumbnailUrl = new AlbumUrlDto(testAlbum2Id, "https://example.com/thumbnail6.jpg");
         AlbumUrlDto testAlbum2File4ThumbnailUrl = new AlbumUrlDto(testAlbum2Id, "https://example.com/thumbnail7.jpg");
 
-        when(fileRepository.findThumbnailsByAlbumIds(albumIds)).thenReturn(
+        when(fileRepository.findThumbnailsByAlbumIds(albumIds, limit)).thenReturn(
                 List.of(
                         testAlbum1File1ThumbnailUrl, testAlbum1File2ThumbnailUrl,
                         testAlbum1File3ThumbnailUrl, testAlbum2File1ThumbnailUrl,
@@ -238,8 +237,8 @@ public class UserMasterServiceTest {
         verify(albumService).getJoinedAlbums(testUser);
         verify(albumMemberRepository).countMembersByAlbumIds(albumIds);
         verify(fileRepository).countFilesByAlbumIds(albumIds);
-        verify(albumMemberRepository).findMemberProfilesByAlbumIds(albumIds);
-        verify(fileRepository).findThumbnailsByAlbumIds(albumIds);
+        verify(albumMemberRepository).findMemberProfilesByAlbumIds(albumIds,limit);
+        verify(fileRepository).findThumbnailsByAlbumIds(albumIds, limit);
     }
 
     @Test
@@ -260,6 +259,8 @@ public class UserMasterServiceTest {
 
         when(albumService.getJoinedAlbums(testUser)).thenReturn(List.of());
 
+        Limit limit = Limit.of(6);
+
         // 2. When
         GetCurrentUserAlbumListResponse response = userMasterService.getCurrentUserAlbums(testUserId);
 
@@ -271,8 +272,8 @@ public class UserMasterServiceTest {
         verify(albumService).getJoinedAlbums(testUser);
         verify(albumMemberRepository, never()).countMembersByAlbumIds(any());
         verify(fileRepository, never()).countFilesByAlbumIds(any());
-        verify(albumMemberRepository, never()).findMemberProfilesByAlbumIds(any());
-        verify(fileRepository, never()).findThumbnailsByAlbumIds(any());
+        verify(albumMemberRepository, never()).findMemberProfilesByAlbumIds(any(), eq(limit));
+        verify(fileRepository, never()).findThumbnailsByAlbumIds(any(), eq(limit));
     }
 
     @Test

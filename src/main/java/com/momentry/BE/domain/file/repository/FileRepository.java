@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.momentry.BE.domain.album.dto.AlbumCountDto;
 import com.momentry.BE.domain.album.dto.AlbumUrlDto;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -36,7 +37,7 @@ public interface FileRepository extends JpaRepository<File, Long> {
 
     @Query("SELECT f.album.id AS albumId, f.thumbUrl AS contentUrl FROM File f " +
             "WHERE f.album.id IN :albumIds ORDER BY f.createdAt DESC")
-    List<AlbumUrlDto> findThumbnailsByAlbumIds(List<Long> albumIds);
+    List<AlbumUrlDto> findThumbnailsByAlbumIds(List<Long> albumIds, Limit limit);
 
     /**
      * 앨범의 파일 개수를 조회
