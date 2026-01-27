@@ -12,7 +12,7 @@ import org.springframework.util.Assert;
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "users")
-@Data
+@Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
@@ -24,6 +24,7 @@ public class User {
     @Column(nullable = false, length = 100)
     private String email;
 
+    @Setter
     @Column(nullable = false, length = 30)
     private String username;
 
@@ -32,11 +33,14 @@ public class User {
     private String providerId;
 
     // Profile
+    @Setter
+    @Column(columnDefinition = "TEXT")
     private String profileImageUrl;
 
     @Column(columnDefinition = "TEXT")
     private String fcmToken;
 
+    @Setter
     @Column(nullable = false, columnDefinition = "tinyint(1) default 1")
     private Boolean isActive = true;
 
