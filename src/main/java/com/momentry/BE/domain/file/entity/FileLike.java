@@ -41,5 +41,4 @@ public class FileLike {
         this.user = user;
         this.file = file;
     }
-
 }

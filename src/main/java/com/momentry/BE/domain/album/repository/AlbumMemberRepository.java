@@ -3,6 +3,10 @@ package com.momentry.BE.domain.album.repository;
 import java.util.List;
 import java.util.Optional;
 
+import com.momentry.BE.domain.album.dto.AlbumCountDto;
+import com.momentry.BE.domain.album.dto.AlbumUrlDto;
+import com.momentry.BE.domain.album.entity.Album;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,4 +25,15 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
 
     @Query("SELECT am FROM AlbumMember am JOIN FETCH am.user WHERE am.album.id = :albumId")
     List<AlbumMember> findByAlbumIdWithUser(@Param("albumId") Long albumId);
+
+    @Query("SELECT am.album FROM AlbumMember am WHERE am.user.id = :userId")
+    List<Album> findAlbumsByUserId(Long userId);
+
+    @Query("SELECT am.album.id AS albumId, COUNT(am) AS count FROM AlbumMember am " +
+            "WHERE am.album.id IN :albumIds GROUP BY am.album.id")
+    List<AlbumCountDto> countMembersByAlbumIds(List<Long> albumIds);
+
+    @Query("SELECT am.album.id AS albumId, am.user.profileImageUrl AS contentUrl FROM AlbumMember am " +
+            "WHERE am.album.id IN :albumIds ORDER BY am.user.username ASC")
+    List<AlbumUrlDto> findMemberProfilesByAlbumIds(List<Long> albumIds, Limit limit);
 }
