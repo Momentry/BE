@@ -30,6 +30,7 @@ import com.momentry.BE.domain.album.exception.InvalidAlbumInviteRequestException
 import com.momentry.BE.domain.album.exception.NoAlbumEditPermissionException;
 import com.momentry.BE.domain.album.exception.NoAlbumMemberEditPermissionException;
 import com.momentry.BE.domain.album.exception.NoAlbumPermissionException;
+import com.momentry.BE.domain.album.exception.TagLimitExceededException;
 import com.momentry.BE.domain.album.exception.TagNotFoundException;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
 import com.momentry.BE.domain.album.repository.AlbumRepository;
@@ -230,6 +231,10 @@ public class AlbumService {
                 .album(albumMember.getAlbum())
                 .tagName(tagName)
                 .build();
+
+        if (albumTagRepository.countByAlbum(albumMember.getAlbum()) >= 10) {
+            throw new TagLimitExceededException();
+        }
 
         try {
             albumTagRepository.saveAndFlush(tag);
