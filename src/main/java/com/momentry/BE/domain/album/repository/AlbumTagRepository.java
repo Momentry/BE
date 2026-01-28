@@ -20,6 +20,8 @@ public interface AlbumTagRepository extends JpaRepository<AlbumTag, Long> {
 
     Optional<AlbumTag> findByIdAndAlbumId(Long id, Long albumId);
 
+    long countByAlbum(Album album);
+
     @Query("SELECT t FROM AlbumTag t JOIN FETCH t.album WHERE LOWER(t.tagName) LIKE LOWER(CONCAT('%', :tagName, '%'))")
     List<AlbumTag> findByTagNameContainingIgnoreCase(@Param("tagName") String tagName);
     
