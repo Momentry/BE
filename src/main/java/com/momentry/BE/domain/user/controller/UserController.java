@@ -1,16 +1,26 @@
 package com.momentry.BE.domain.user.controller;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.momentry.BE.domain.user.dto.GetCurrentUserAlbumListResponse;
+import com.momentry.BE.domain.user.dto.GetCurrentUserFileListResponse;
 import com.momentry.BE.domain.user.dto.GetCurrentUserLikedFileListResponse;
 import com.momentry.BE.domain.user.dto.LoginResponse;
 import com.momentry.BE.domain.user.dto.UserUpdateResponse;
 import com.momentry.BE.domain.user.service.master.UserMasterService;
 import com.momentry.BE.global.dto.ApiResponse;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/user")
@@ -52,9 +62,17 @@ public class UserController {
     public ResponseEntity<ApiResponse<GetCurrentUserLikedFileListResponse>> getCurrentUserLikedFileList(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size){
+            @RequestParam(defaultValue = "20") int size) {
         GetCurrentUserLikedFileListResponse response = userMasterService.getCurrentUserLikedFile(userId, page, size);
 
         return ApiResponse.ofSuccess(response);
+    }
+
+    @GetMapping("/{userId}/files")
+    public ResponseEntity<ApiResponse<GetCurrentUserFileListResponse>> getCurrentUserFileList(@PathVariable Long userId,
+            @RequestParam String cursor) {
+            GetCurrentUserFileListResponse response = userMasterService.getCurrentUserFileList(userId, cursor);
+
+            return ApiResponse.ofSuccess(response);
     }
 }

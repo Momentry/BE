@@ -1,31 +1,43 @@
 package com.momentry.BE.domain.user.service.master;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Limit;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.momentry.BE.domain.album.dto.AlbumCountDto;
 import com.momentry.BE.domain.album.dto.AlbumHeaderDto;
 import com.momentry.BE.domain.album.dto.AlbumUrlDto;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
 import com.momentry.BE.domain.album.service.AlbumService;
+import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.dto.LikedFileDto;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.repository.FileLikeRepository;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import com.momentry.BE.domain.user.dto.GetCurrentUserAlbumListResponse;
+import com.momentry.BE.domain.user.dto.GetCurrentUserFileListResponse;
 import com.momentry.BE.domain.user.dto.GetCurrentUserLikedFileListResponse;
 import com.momentry.BE.domain.user.dto.LoginResponse;
 import com.momentry.BE.domain.user.dto.UserUpdateResponse;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.service.sub.AlertPreferenceService;
 import com.momentry.BE.domain.user.service.sub.UserService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
+import com.momentry.BE.global.dto.FileCursor;
+import com.momentry.BE.global.exception.CursorDecodeFailException;
+import com.momentry.BE.global.util.CursorUtil;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -117,7 +129,7 @@ public class UserMasterService {
     }
 
     @Transactional(readOnly = true)
-    public GetCurrentUserLikedFileListResponse getCurrentUserLikedFile(Long userId, int page, int size){
+    public GetCurrentUserLikedFileListResponse getCurrentUserLikedFile(Long userId, int page, int size) {
         User user = userService.getCurrentUser(userId);
 
         Pageable pageable = PageRequest.of(page, size);
@@ -129,8 +141,55 @@ public class UserMasterService {
         List<LikedFileDto> likedFileListDto = likedFiles.getContent().stream()
                 .map(LikedFileDto::new)
                 .toList();
-        
+
         // 반환하기
         return new GetCurrentUserLikedFileListResponse(likedFileListDto, likedFiles.hasNext());
+    }
+
+    @Transactional(readOnly = true)
+    public GetCurrentUserFileListResponse getCurrentUserFileList(Long userId, String cursor) {
+        User user = userService.getCurrentUser(userId);
+
+        List<Album> albums = albumService.getJoinedAlbums(user);
+        List<Long> albumIds = albums.stream().map(Album::getId).toList();
+
+        if (albumIds.isEmpty()) {
+            return new GetCurrentUserFileListResponse(List.of(), null);
+        }
+
+        FileCursor decodedCursor = parseCursor(cursor);
+        int pageSize = 20;
+        Pageable pageable = PageRequest.of(0, pageSize + 1);
+
+        List<File> files = (decodedCursor == null)
+                ? fileRepository.findByAlbumIdsOrderByCreatedAtDescIdDesc(albumIds, pageable)
+                : fileRepository.findByAlbumIdsWithCursor(albumIds, decodedCursor.getCreatedAt(), decodedCursor.getId(), pageable);
+
+        boolean hasNext = files.size() > pageSize;
+        if (hasNext) {
+            files = files.subList(0, pageSize);
+        }
+
+        String nextCursor = null;
+        if (!files.isEmpty()) {
+            File lastFile = files.get(files.size() - 1);
+            nextCursor = CursorUtil.encodeCursor(lastFile.getCreatedAt(), lastFile.getId());
+        }
+
+        return new GetCurrentUserFileListResponse(files.stream().map(FileResult::of).toList(), nextCursor);
+    }
+
+    private FileCursor parseCursor(String cursor) {
+        String[] parts = CursorUtil.decodeCursorParts(cursor);
+        if (parts == null) {
+            return null;
+        }
+        try {
+            LocalDateTime createdAt = LocalDateTime.parse(parts[0]);
+            Long id = Long.parseLong(parts[1]);
+            return new FileCursor(createdAt, id);
+        } catch (DateTimeParseException | NumberFormatException e) {
+            throw new CursorDecodeFailException();
+        }
     }
 }
