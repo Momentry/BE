@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,7 +30,7 @@ import com.momentry.BE.domain.album.service.AlbumService;
 import com.momentry.BE.domain.file.dto.FilePageResult;
 import com.momentry.BE.global.dto.ApiResponse;
 import com.momentry.BE.global.service.CloudFrontSignedCookieService;
-import com.momentry.BE.security.dto.CustomUserDetails;
+import com.momentry.BE.security.util.SecurityUtil;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -50,18 +49,17 @@ public class AlbumController {
      * 앨범 생성
      * 
      * @param request 앨범 생성 요청 (albumName, albumCoverImage)
-     * @param userDetails 인증 사용자 정보
+     * @param userId 인증 사용자 ID
      * @return 앨범 생성 응답 (albumId, albumName)
      */
     @PostMapping
     public ResponseEntity<ApiResponse<AlbumCreationResponse>> createAlbum(
-            @ModelAttribute AlbumCreationRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @ModelAttribute AlbumCreationRequest request) {
 
         AlbumCreationResponse response = albumService.createAlbum(
                 request.getAlbumName(),
                 request.getAlbumCoverImage(),
-                userDetails.getUserId());
+                SecurityUtil.getCurrentUserId());
         return ApiResponse.ofSuccess(HttpStatus.CREATED, "앨범 생성 성공", response);
     }
 
@@ -69,14 +67,12 @@ public class AlbumController {
      * 앨범 상세 정보 조회
      * 
      * @param albumId 앨범 ID
-     * @param userDetails 인증 사용자 정보
      * @return 앨범 상세 정보 (앨범 이름, 커버 이미지, 파일 개수, 멤버 목록, 태그 목록)
      */
     @GetMapping("/{albumId}")
     public ResponseEntity<ApiResponse<AlbumDetailResponse>> getAlbum(
-            @PathVariable Long albumId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        AlbumDetailResponse response = albumService.getAlbumDetail(albumId, userDetails.getUserId());
+            @PathVariable Long albumId) {
+        AlbumDetailResponse response = albumService.getAlbumDetail(albumId, SecurityUtil.getCurrentUserId());
         return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 정보 조회 성공", response);
     }
 
@@ -85,29 +81,27 @@ public class AlbumController {
      * 
      * @param albumId 앨범 ID
      * @param request 앨범 수정 요청 (albumName, albumCoverImage) - 선택적
-     * @param userDetails 인증 사용자 정보
+     * @param userId 인증 사용자 ID
      * @return 앨범 수정 응답
      */
     @PostMapping("/{albumId}")
     public ResponseEntity<ApiResponse<Object>> updateAlbum(
             @PathVariable Long albumId,
-            @ModelAttribute AlbumCreationRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @ModelAttribute AlbumCreationRequest request) {
 
         albumService.updateAlbum(
                 albumId,
                 request.getAlbumName(),
                 request.getAlbumCoverImage(),
-                userDetails.getUserId());
+                SecurityUtil.getCurrentUserId());
         return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 정보 수정 성공", null);
     }
 
     @DeleteMapping("/{albumId}/leave")
     public ResponseEntity<ApiResponse<Object>> leaveAlbum(
-            @PathVariable Long albumId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @PathVariable Long albumId) {
 
-        boolean isAlbumDeleted = albumService.leaveAlbum(albumId, userDetails.getUserId());
+        boolean isAlbumDeleted = albumService.leaveAlbum(albumId, SecurityUtil.getCurrentUserId());
 
         String message = isAlbumDeleted
                 ? "앨범 나가기 성공, 잔여 멤버 0으로 앨범 삭제"
@@ -118,32 +112,28 @@ public class AlbumController {
 
     @PostMapping("/{albumId}/tags")
     public ResponseEntity<ApiResponse<Object>> createTag(@PathVariable Long albumId,
-            @RequestBody TagCreationRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        albumService.createTag(albumId, request.getTagName(), userDetails.getUserId());
+            @RequestBody TagCreationRequest request) {
+        albumService.createTag(albumId, request.getTagName(), SecurityUtil.getCurrentUserId());
         return ApiResponse.ofSuccess();
     }
 
     @DeleteMapping("/{albumId}/tags/{tagId}")
-    public ResponseEntity<ApiResponse<Object>> deleteTag(@PathVariable Long albumId, @PathVariable Long tagId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        albumService.deleteTag(albumId, tagId, userDetails.getUserId());
+    public ResponseEntity<ApiResponse<Object>> deleteTag(@PathVariable Long albumId, @PathVariable Long tagId) {
+        albumService.deleteTag(albumId, tagId, SecurityUtil.getCurrentUserId());
         return ApiResponse.ofSuccess();
     }
 
     @PatchMapping("/{albumId}/tags/{tagId}")
     public ResponseEntity<ApiResponse<Object>> updateTag(@PathVariable Long albumId, @PathVariable Long tagId,
-            @RequestBody TagUpdateRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        albumService.updateTag(albumId, tagId, request.getTagName(), userDetails.getUserId());
+            @RequestBody TagUpdateRequest request) {
+        albumService.updateTag(albumId, tagId, request.getTagName(), SecurityUtil.getCurrentUserId());
         return ApiResponse.ofSuccess();
     }
 
     @GetMapping("/{albumId}/tags")
     public ResponseEntity<ApiResponse<List<AlbumTagResult>>> getTags(
-            @PathVariable Long albumId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<AlbumTagResult> tags = albumService.getTags(albumId, userDetails.getUserId());
+            @PathVariable Long albumId) {
+        List<AlbumTagResult> tags = albumService.getTags(albumId, SecurityUtil.getCurrentUserId());
         return ApiResponse.ofSuccess(tags);
     }
 
@@ -164,9 +154,8 @@ public class AlbumController {
             @PathVariable Long albumId,
             @RequestParam(required = false) Long tagId,
             @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "20") int size,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        FilePageResult result = albumService.getFiles(albumId, tagId, cursor, size, userDetails.getUserId());
+            @RequestParam(defaultValue = "20") int size) {
+        FilePageResult result = albumService.getFiles(albumId, tagId, cursor, size, SecurityUtil.getCurrentUserId());
         HttpHeaders headers = cloudFrontSignedCookieService.buildSignedCookieHeaders(albumId);
         return ApiResponse.ofSuccess(headers, result);
     }
@@ -174,9 +163,8 @@ public class AlbumController {
     @PostMapping("/{albumId}/members")
     public ResponseEntity<ApiResponse<AlbumMemberInviteResult>> inviteMembers(
             @PathVariable @NotNull Long albumId,
-            @Valid @RequestBody AlbumMemberInviteRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        AlbumMemberInviteResult result = albumService.inviteMembers(albumId, request.getUserIds(), userDetails.getUserId());
+            @Valid @RequestBody AlbumMemberInviteRequest request) {
+        AlbumMemberInviteResult result = albumService.inviteMembers(albumId, request.getUserIds(), SecurityUtil.getCurrentUserId());
         return ApiResponse.ofSuccess(HttpStatus.CREATED, result);
     }
 
@@ -184,18 +172,16 @@ public class AlbumController {
     public ResponseEntity<ApiResponse<Object>> updateMemberPermission(
             @PathVariable Long albumId,
             @PathVariable Long memberId,
-            @RequestBody AlbumMemberPermissionUpdateRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        albumService.updateMemberPermission(albumId, memberId, request.getPermission(), userDetails.getUserId());
+            @RequestBody AlbumMemberPermissionUpdateRequest request) {
+        albumService.updateMemberPermission(albumId, memberId, request.getPermission(), SecurityUtil.getCurrentUserId());
         return ApiResponse.ofSuccess();
     }
 
     @DeleteMapping("/{albumId}/members/{memberId}")
     public ResponseEntity<ApiResponse<Object>> removeMember(
             @PathVariable Long albumId,
-            @PathVariable Long memberId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        albumService.kickMember(albumId, memberId, userDetails.getUserId());
+            @PathVariable Long memberId) {
+        albumService.kickMember(albumId, memberId, SecurityUtil.getCurrentUserId());
         return ApiResponse.ofSuccess();
     }
 }

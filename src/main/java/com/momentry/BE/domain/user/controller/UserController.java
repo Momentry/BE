@@ -2,7 +2,6 @@ package com.momentry.BE.domain.user.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -21,7 +20,7 @@ import com.momentry.BE.domain.user.dto.UserUpdateResponse;
 import com.momentry.BE.domain.user.exception.MismatchUserException;
 import com.momentry.BE.domain.user.service.master.UserMasterService;
 import com.momentry.BE.global.dto.ApiResponse;
-import com.momentry.BE.security.dto.CustomUserDetails;
+import com.momentry.BE.security.util.SecurityUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,19 +34,16 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserUpdateResponse>> update(
             @PathVariable Long userId,
             @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestParam(value = "newUsername", required = false) String newUsername,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        validateSelf(userId, userDetails);
+            @RequestParam(value = "newUsername", required = false) String newUsername) {
+        validateSelf(userId);
         UserUpdateResponse userUpdateResponse = userMasterService.updateUser(userId, file, newUsername);
 
         return ApiResponse.ofSuccess(userUpdateResponse);
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<ApiResponse<Void>> signOut(
-            @PathVariable Long userId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        validateSelf(userId, userDetails);
+    public ResponseEntity<ApiResponse<Void>> signOut(@PathVariable Long userId) {
+        validateSelf(userId);
         userMasterService.signOut(userId);
 
         return ApiResponse.ofSuccess(HttpStatus.NO_CONTENT, null);
@@ -56,9 +52,8 @@ public class UserController {
     @PatchMapping("/{userId}/alert")
     public ResponseEntity<ApiResponse<LoginResponse.AlertDto>> updateAlert(
             @PathVariable Long userId,
-            @RequestBody LoginResponse.AlertDto request,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        validateSelf(userId, userDetails);
+            @RequestBody LoginResponse.AlertDto request) {
+        validateSelf(userId);
         userMasterService.updateAlertPreference(request, userId);
 
         return ApiResponse.ofSuccess(request);
@@ -67,9 +62,8 @@ public class UserController {
     // TODO : 이것도 페이지네이션 필요함???
     @GetMapping("/{userId}/albums")
     public ResponseEntity<ApiResponse<GetCurrentUserAlbumListResponse>> getCurrentUserAlbumList(
-            @PathVariable Long userId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        validateSelf(userId, userDetails);
+            @PathVariable Long userId) {
+        validateSelf(userId);
         GetCurrentUserAlbumListResponse response = userMasterService.getCurrentUserAlbums(userId);
 
         return ApiResponse.ofSuccess(response);
@@ -79,9 +73,8 @@ public class UserController {
     public ResponseEntity<ApiResponse<GetCurrentUserLikedFileListResponse>> getCurrentUserLikedFileList(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        validateSelf(userId, userDetails);
+            @RequestParam(defaultValue = "20") int size) {
+        validateSelf(userId);
         GetCurrentUserLikedFileListResponse response = userMasterService.getCurrentUserLikedFile(userId, page, size);
 
         return ApiResponse.ofSuccess(response);
@@ -90,13 +83,15 @@ public class UserController {
     @GetMapping("/{userId}/files")
     public ResponseEntity<ApiResponse<GetCurrentUserFileListResponse>> getCurrentUserFileList(@PathVariable Long userId,
             @RequestParam String cursor) {
+        validateSelf(userId);
         GetCurrentUserFileListResponse response = userMasterService.getCurrentUserFileList(userId, cursor);
 
         return ApiResponse.ofSuccess(response);
     }
     
-    private void validateSelf(Long userId, CustomUserDetails userDetails) {
-        if (userDetails == null || !userId.equals(userDetails.getUserId())) {
+    private void validateSelf(Long userId) {
+        Long currentUserId = SecurityUtil.getCurrentUserId();
+        if (!userId.equals(currentUserId)) {
             throw new MismatchUserException();
         }
     }
