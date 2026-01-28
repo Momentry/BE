@@ -1,10 +1,8 @@
 package com.momentry.BE.domain.album.service;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.function.Function;
 
@@ -13,18 +11,19 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.momentry.BE.domain.album.dto.AlbumMemberInviteResult;
-import com.momentry.BE.domain.album.dto.InvitedMemberResult;
 import com.momentry.BE.domain.album.dto.AlbumCreationResponse;
 import com.momentry.BE.domain.album.dto.AlbumDetailResponse;
+import com.momentry.BE.domain.album.dto.AlbumMemberInviteResult;
 import com.momentry.BE.domain.album.dto.AlbumTagResult;
+import com.momentry.BE.domain.album.dto.InvitedMemberResult;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.entity.AlbumMember;
 import com.momentry.BE.domain.album.entity.AlbumTag;
 import com.momentry.BE.domain.album.entity.MemberAlbumPermission;
-import com.momentry.BE.domain.album.exception.CannotKickManagerException;
-import com.momentry.BE.domain.album.exception.AlbumNotFoundException;
+import com.momentry.BE.domain.album.exception.AlbumMemberNotFoundException;
 import com.momentry.BE.domain.album.exception.AlbumMustHaveManagerException;
+import com.momentry.BE.domain.album.exception.AlbumNotFoundException;
+import com.momentry.BE.domain.album.exception.CannotKickManagerException;
 import com.momentry.BE.domain.album.exception.DuplicateAlbumNameException;
 import com.momentry.BE.domain.album.exception.DuplicateTagException;
 import com.momentry.BE.domain.album.exception.InvalidAlbumInviteRequestException;
@@ -32,20 +31,20 @@ import com.momentry.BE.domain.album.exception.NoAlbumEditPermissionException;
 import com.momentry.BE.domain.album.exception.NoAlbumMemberEditPermissionException;
 import com.momentry.BE.domain.album.exception.NoAlbumPermissionException;
 import com.momentry.BE.domain.album.exception.TagNotFoundException;
-import com.momentry.BE.domain.album.exception.AlbumMemberNotFoundException;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
 import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.repository.AlbumTagRepository;
-import com.momentry.BE.domain.user.entity.User;
-import com.momentry.BE.domain.user.repository.UserRepository;
 import com.momentry.BE.domain.file.dto.FilePageResult;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileTagInfo;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import com.momentry.BE.domain.file.repository.FileTagInfoRepository;
+import com.momentry.BE.domain.user.entity.User;
+import com.momentry.BE.domain.user.repository.UserRepository;
 import com.momentry.BE.global.dto.FileCursor;
 import com.momentry.BE.global.exception.CursorDecodeFailException;
+import com.momentry.BE.global.util.CursorUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -531,7 +530,7 @@ public class AlbumService {
 
         int pageSize = Math.max(size, 1);
         PageRequest pageable = PageRequest.of(0, pageSize + 1);
-        FileCursor decodedCursor = decodeCursor(cursor);
+        FileCursor decodedCursor = parseCursor(cursor);
 
         if (tagId != null) {
             getTagByIdAndAlbumId(tagId, albumId);
@@ -597,51 +596,22 @@ public class AlbumService {
         String nextCursor = null;
         if (!items.isEmpty()) {
             T lastItem = items.get(items.size() - 1);
-            nextCursor = encodeCursor(createdAtExtractor.apply(lastItem), idExtractor.apply(lastItem));
+            nextCursor = CursorUtil.encodeCursor(createdAtExtractor.apply(lastItem), idExtractor.apply(lastItem));
         }
         return new FilePageResult(results, nextCursor, hasNext);
     }
 
-    /**
-     * cursor를 디코딩하여 Cursor 객체로 반환
-     * 
-     * cursor 문자열 형식: createdAt|id
-     * base64 인코딩된 문자열이며 디코딩 후 createdAt|id 형식의 문자열로 변환되어야 함
-     * 
-     * @implNote cursor 문자열이 올바르지 않으면 CursorDecodeFailException 예외를 발생시킴
-     * 
-     * @param cursor cursor 문자열
-     * @return Cursor
-     */
-    private FileCursor decodeCursor(String cursor) {
-        if (cursor == null || cursor.isBlank()) {
+    private FileCursor parseCursor(String cursor) {
+        String[] parts = CursorUtil.decodeCursorParts(cursor);
+        if (parts == null) {
             return null;
         }
         try {
-            byte[] decoded = Base64.getUrlDecoder().decode(cursor);
-            String payload = new String(decoded, StandardCharsets.UTF_8);
-            String[] parts = payload.split("\\|", 2);
-            if (parts.length != 2) {
-                throw new CursorDecodeFailException();
-            }
             LocalDateTime createdAt = LocalDateTime.parse(parts[0]);
             Long id = Long.parseLong(parts[1]);
             return new FileCursor(createdAt, id);
-        } catch (IllegalArgumentException | DateTimeParseException e) {
+        } catch (DateTimeParseException | NumberFormatException e) {
             throw new CursorDecodeFailException();
         }
-    }
-
-    /**
-     * Cursor 객체를 base64 인코딩하여 문자열로 반환
-     * 
-     * @param createdAt 생성 시간
-     * @param id        ID
-     * @return 인코딩된 문자열
-     */
-    private String encodeCursor(LocalDateTime createdAt, Long id) {
-        String payload = createdAt + "|" + id;
-        return Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(payload.getBytes(StandardCharsets.UTF_8));
     }
 }

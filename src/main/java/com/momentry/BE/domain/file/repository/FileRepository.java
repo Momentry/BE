@@ -2,8 +2,6 @@ package com.momentry.BE.domain.file.repository;
 
 import java.util.List;
 
-import com.momentry.BE.domain.album.dto.AlbumCountDto;
-import com.momentry.BE.domain.album.dto.AlbumUrlDto;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,8 +9,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.momentry.BE.domain.album.dto.AlbumCountDto;
+import com.momentry.BE.domain.album.dto.AlbumUrlDto;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.file.entity.File;
+import com.momentry.BE.domain.user.entity.User;
 
 @Repository
 public interface FileRepository extends JpaRepository<File, Long> {
@@ -30,6 +31,40 @@ public interface FileRepository extends JpaRepository<File, Long> {
                                      @Param("cursorCreatedAt") java.time.LocalDateTime cursorCreatedAt,
                                      @Param("cursorId") Long cursorId,
                                      Pageable pageable);
+
+    List<File> findByUserOrderByCreatedAtDescIdDesc(User user, Pageable pageable);
+
+    @Query("""
+            SELECT f FROM File f
+            WHERE f.uploader = :user
+              AND (f.createdAt < :cursorCreatedAt
+                   OR (f.createdAt = :cursorCreatedAt AND f.id < :cursorId))
+            ORDER BY f.createdAt DESC, f.id DESC
+            """)
+    List<File> findByUserWithCursor(@Param("user") User user,
+                                    @Param("cursorCreatedAt") java.time.LocalDateTime cursorCreatedAt,
+                                    @Param("cursorId") Long cursorId,
+                                    Pageable pageable);
+
+    @Query("""
+            SELECT f FROM File f
+            WHERE f.album.id IN :albumIds
+            ORDER BY f.createdAt DESC, f.id DESC
+            """)
+    List<File> findByAlbumIdsOrderByCreatedAtDescIdDesc(@Param("albumIds") List<Long> albumIds,
+                                                        Pageable pageable);
+
+    @Query("""
+            SELECT f FROM File f
+            WHERE f.album.id IN :albumIds
+              AND (f.createdAt < :cursorCreatedAt
+                   OR (f.createdAt = :cursorCreatedAt AND f.id < :cursorId))
+            ORDER BY f.createdAt DESC, f.id DESC
+            """)
+    List<File> findByAlbumIdsWithCursor(@Param("albumIds") List<Long> albumIds,
+                                        @Param("cursorCreatedAt") java.time.LocalDateTime cursorCreatedAt,
+                                        @Param("cursorId") Long cursorId,
+                                        Pageable pageable);
 
     @Query("SELECT f.album.id AS albumId, COUNT(f) AS count FROM File f " +
             "WHERE f.album.id IN :albumIds GROUP BY f.album.id")
