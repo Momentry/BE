@@ -1,5 +1,9 @@
 package com.momentry.BE.domain.user.service.sub;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.momentry.BE.domain.user.dto.OidcClaims;
 import com.momentry.BE.domain.user.dto.UserUpdateResponse;
 import com.momentry.BE.domain.user.entity.AccountPlan;
@@ -7,15 +11,13 @@ import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.enums.UserAccountPlan;
 import com.momentry.BE.domain.user.exception.AccountPlanNotFoundException;
 import com.momentry.BE.domain.user.exception.DuplicateUserException;
-import com.momentry.BE.domain.user.exception.MissmatchUserException;
+import com.momentry.BE.domain.user.exception.MismatchUserException;
 import com.momentry.BE.domain.user.exception.UserNotFoundException;
 import com.momentry.BE.domain.user.repository.AccountPlanRepository;
 import com.momentry.BE.domain.user.repository.UserRepository;
 import com.momentry.BE.security.util.SecurityUtil;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +32,7 @@ public class UserService {
 
     public User getCurrentUser(Long userId){
         if(!userId.equals(SecurityUtil.getCurrentUserId())){
-            throw new MissmatchUserException();
+            throw new MismatchUserException();
         }
 
         return getUser(userId);
