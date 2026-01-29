@@ -129,21 +129,36 @@ public class UserMasterService {
     }
 
     @Transactional(readOnly = true)
-    public GetCurrentUserLikedFileListResponse getCurrentUserLikedFile(Long userId, int page, int size) {
+    public GetCurrentUserLikedFileListResponse getCurrentUserLikedFile(Long userId, String cursor, int pageSize) {
         User user = userService.getCurrentUser(userId);
 
-        Pageable pageable = PageRequest.of(page, size);
+        FileCursor decodedCursor = parseCursor(cursor);
+        Pageable pageable = PageRequest.of(0, pageSize + 1);
 
         // 사용자의 좋아요 목록에 있는 파일 리스트를 좋아요의 최신순으로 가져오기
-        Slice<File> likedFiles = fileLikeRepository.findLikedFileByUserId(user.getId(), pageable);
+        List<File> likedFiles = (decodedCursor == null)
+                ? fileLikeRepository.findLikedFileByUserId(user.getId(), pageable)
+                : fileLikeRepository.findLikedFileByUserIdWithCursor(user.getId(), decodedCursor.getCreatedAt(), decodedCursor.getId(), pageable);
+
+        boolean hasNext = likedFiles.size() > pageSize;
+
+        if (hasNext) {
+            likedFiles = likedFiles.subList(0, pageSize);
+        }
+
+        String nextCursor = null;
+        if (!likedFiles.isEmpty()) {
+            File lastFile = likedFiles.get(likedFiles.size() - 1);
+            nextCursor = CursorUtil.encodeCursor(lastFile.getCreatedAt(), lastFile.getId());
+        }
 
         // Dto로 가공하기
-        List<LikedFileDto> likedFileListDto = likedFiles.getContent().stream()
+        List<LikedFileDto> likedFileListDto = likedFiles.stream()
                 .map(LikedFileDto::new)
                 .toList();
 
         // 반환하기
-        return new GetCurrentUserLikedFileListResponse(likedFileListDto, likedFiles.hasNext());
+        return new GetCurrentUserLikedFileListResponse(likedFileListDto, nextCursor);
     }
 
     @Transactional(readOnly = true)

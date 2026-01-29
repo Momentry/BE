@@ -347,22 +347,20 @@ public class UserMasterServiceTest {
         ReflectionTestUtils.setField(testFile1, "id", testFile1Id);
         ReflectionTestUtils.setField(testFile2, "id", testFile2Id);
 
-        int page = 1;
+        int page = 0;
         int size = 20;
-        Pageable pageable = PageRequest.of(page, size);
-        boolean hasNext = true;
-        Slice<File> likedFileSlice = new SliceImpl<>(List.of(testFile1, testFile2), pageable, hasNext);
+        Pageable pageable = PageRequest.of(page, size+1);
+        List<File> likedFileSlice = List.of(testFile1, testFile2);
 
         when(fileLikeRepository.findLikedFileByUserId(testUserId, pageable)).thenReturn(
                 likedFileSlice
         );
 
         // 2. When
-        GetCurrentUserLikedFileListResponse response = userMasterService.getCurrentUserLikedFile(testUserId, page, size);
+        GetCurrentUserLikedFileListResponse response = userMasterService.getCurrentUserLikedFile(testUserId, null, size);
 
         // 3 Then
         assertThat(response.getLikedFiles()).hasSize(2);
-        assertThat(response.isHasNext()).isTrue();
 
         LikedFileDto responseFile1 = response.getLikedFiles().get(0);
         assertThat(responseFile1.getFileId()).isEqualTo(testFile1Id);
@@ -389,7 +387,6 @@ public class UserMasterServiceTest {
     void getCurrentUserLikedFile_UserNotFound(){
         // 1. Given
         Long notFoundUserId = 999L;
-        int page = 1;
         int size = 20;
 
         // userService.update 호출 시 EntityNotFoundException이 발생하도록 설정
@@ -397,7 +394,7 @@ public class UserMasterServiceTest {
                 .thenThrow(new UserNotFoundException());
 
         // 2. When & Then
-        assertThatThrownBy(() -> userMasterService.getCurrentUserLikedFile(notFoundUserId, page, size))
+        assertThatThrownBy(() -> userMasterService.getCurrentUserLikedFile(notFoundUserId, null, size))
                 .isInstanceOf(UserNotFoundException.class);
     }
 }
