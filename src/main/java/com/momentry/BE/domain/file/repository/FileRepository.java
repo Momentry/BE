@@ -32,7 +32,7 @@ public interface FileRepository extends JpaRepository<File, Long> {
                                      @Param("cursorId") Long cursorId,
                                      Pageable pageable);
 
-    List<File> findByUserOrderByCreatedAtDescIdDesc(User user, Pageable pageable);
+    List<File> findByUploaderOrderByCreatedAtDescIdDesc(User user, Pageable pageable);
 
     @Query("""
             SELECT f FROM File f
@@ -41,7 +41,7 @@ public interface FileRepository extends JpaRepository<File, Long> {
                    OR (f.createdAt = :cursorCreatedAt AND f.id < :cursorId))
             ORDER BY f.createdAt DESC, f.id DESC
             """)
-    List<File> findByUserWithCursor(@Param("user") User user,
+    List<File> findByUploaderWithCursor(@Param("user") User user,
                                     @Param("cursorCreatedAt") java.time.LocalDateTime cursorCreatedAt,
                                     @Param("cursorId") Long cursorId,
                                     Pageable pageable);
