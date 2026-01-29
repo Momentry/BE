@@ -21,7 +21,4 @@ public class AlbumHeaderDto {
 
     @Builder.Default
     private List<String> memberProfiles = List.of();  // null 허용, 최대 4명
-
-    @Builder.Default
-    private List<String> fileThumbnails = List.of();  // 최근 4개 썸네일
 }

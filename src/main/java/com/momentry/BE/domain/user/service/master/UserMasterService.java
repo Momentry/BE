@@ -101,13 +101,6 @@ public class UserMasterService {
                         AlbumUrlDto::getAlbumId, // 그룹화 기준 (Key)
                         Collectors.mapping(AlbumUrlDto::getUrl, Collectors.toList()) // 벨류 변환 및 리스트 수집 (Value)
                 ));
-
-        Map<Long, List<String>> fileThumbnailImageMap = fileRepository.findThumbnailsByAlbumIds(albumIds, Limit.of(6))
-                .stream()
-                .collect(Collectors.groupingBy(
-                        AlbumUrlDto::getAlbumId,
-                        Collectors.mapping(AlbumUrlDto::getUrl, Collectors.toList())
-                ));
         
         // 앨범 별로 albumHeaderDto를 생성해서 list를 만듬
         List<AlbumHeaderDto> albumHeaders = albums.stream().map(album -> {
@@ -120,7 +113,6 @@ public class UserMasterService {
                     .memberCount(memberCountMap.getOrDefault(albumId, 0))
                     .fileCount(fileCountMap.getOrDefault(albumId, 0))
                     .memberProfiles(memberProfileImageMap.get(albumId))
-                    .fileThumbnails(fileThumbnailImageMap.get(albumId))
                     .createdAt(album.getCreatedAt().toLocalDate())
                     .build();
         }).toList();
