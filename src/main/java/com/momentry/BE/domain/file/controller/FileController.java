@@ -3,9 +3,11 @@ package com.momentry.BE.domain.file.controller;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.service.FileService;
 import com.momentry.BE.global.dto.ApiResponse;
+import com.momentry.BE.security.dto.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,12 +22,13 @@ public class FileController {
 
     @PutMapping(value = "/{albumId}")
     public ResponseEntity<ApiResponse<FileResult>> uploadFile(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long albumId,
             @RequestPart("file") MultipartFile file,
             @RequestPart(value="metadata", required = false) String metadata,
             @RequestPart(value="createdAt", required = false) LocalDateTime createdAt
             ){
-        FileResult response = fileService.uploadFile(albumId, file, metadata, createdAt);
+        FileResult response = fileService.uploadFile(userDetails.getUserId(), albumId, file, metadata, createdAt);
         return ApiResponse.ofSuccess(HttpStatus.CREATED, "파일 업로드 성공", response);
     }
 }
