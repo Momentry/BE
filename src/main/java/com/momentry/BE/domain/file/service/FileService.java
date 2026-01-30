@@ -1,6 +1,5 @@
 package com.momentry.BE.domain.file.service;
 
-import com.google.api.client.util.DateTime;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.global.util.S3Util;
 import lombok.RequiredArgsConstructor;
@@ -21,10 +20,10 @@ public class FileService {
 
     private final S3Util s3Util;
 
-    @Value("${spring.cloud.aws.s3.bucket")
+    @Value("${spring.cloud.aws.s3.bucket}")
     private String bucketName;
 
-    @Value("${spring.cloud.aws.region.static")
+    @Value("${spring.cloud.aws.region.static}")
     private String region;
 
     public FileResult uploadFile(Long albumId, MultipartFile file, String metadata, LocalDateTime createdAt){
