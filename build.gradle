@@ -52,9 +52,7 @@ dependencies {
 		implementation 'software.amazon.awssdk:cloudfront'
 
 		// =========== AWS S3 ===========
-		// 1. BOM 추가 (버전 관리자 역할)
-		implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:3.3.0')
-		implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
+		implementation 'software.amazon.awssdk:s3:2.25.17'
 
 		// =========== Test ===========
 		testImplementation 'org.springframework.boot:spring-boot-starter-test'
