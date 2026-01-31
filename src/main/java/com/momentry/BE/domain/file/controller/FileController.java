@@ -1,9 +1,14 @@
 package com.momentry.BE.domain.file.controller;
 
+import com.momentry.BE.domain.album.entity.Album;
+import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.service.FileService;
+import com.momentry.BE.domain.user.entity.User;
+import com.momentry.BE.domain.user.repository.UserRepository;
 import com.momentry.BE.global.dto.ApiResponse;
 import com.momentry.BE.security.dto.CustomUserDetails;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +33,7 @@ public class FileController {
             @RequestPart(value="metadata", required = false) String metadata,
             @RequestPart(value="createdAt", required = false) LocalDateTime createdAt
             ){
+        // 유저, 앨범 기반으로 파일 업로드 메서드 호출
         FileResult response = fileService.uploadFile(userDetails.getUserId(), albumId, file, metadata, createdAt);
         return ApiResponse.ofSuccess(HttpStatus.CREATED, "파일 업로드 성공", response);
     }

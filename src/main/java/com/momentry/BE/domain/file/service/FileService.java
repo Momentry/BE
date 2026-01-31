@@ -1,11 +1,15 @@
 package com.momentry.BE.domain.file.service;
 
+import com.momentry.BE.domain.album.entity.Album;
+import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileType;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import com.momentry.BE.domain.user.entity.User;
+import com.momentry.BE.domain.user.repository.UserRepository;
 import com.momentry.BE.global.util.S3Util;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,11 +27,13 @@ import java.util.UUID;
 public class FileService {
     private final S3Util s3Util;
     private final FileRepository fileRepository;
+    private final UserRepository userRepository;
+    private final AlbumRepository albumRepository;
 
     public FileResult uploadFile(Long uploaderId, Long albumId, MultipartFile file, String metadata, LocalDateTime createdAt){
         // TODO: 파일 업로드 시 예외 처리
         // 1. 앨범이 없는 경우
-        // 2. 앨범에 업로드할 권한이 없는 경우
+        // 2. 앨범에 업로드할 권한이 없는 경우 -> AOP로 분리
         // 3. 최대 업로드 가능한 크기 초과한 경우?
 
         // 파일 타입(Image, Video) 체크
@@ -48,17 +54,7 @@ public class FileService {
             }
 
             // DB에 파일 정보 저장
-            File uploadedFile = File.builder()
-                    // TODO: null값 채우기
-                    .uploader(null)
-                    .album(null)
-                    .thumbUrl(null)
-                    .displayUrl(null)
-                    .fileType(fileType)
-                    .metadata(metadata)
-                    .createdAt(createdAt)
-                    .build();
-//            fileRepository.save(uploadedFile);
+            File uploadedFile = saveFileInfo(uploaderId, albumId, fileType, metadata, createdAt);
 
             // 업로드 결과 반환
             return FileResult.of(uploadedFile);
@@ -90,6 +86,30 @@ public class FileService {
         );
 
         // TODO: 썸네일 추출 + 압축
+    }
+
+    public File saveFileInfo(Long uploaderId, Long albumId, FileType fileType, String metadata, LocalDateTime createdAt){
+        // 유저, 앨범 프록시 객체 생성
+        User uploader = userRepository.getReferenceById(uploaderId);
+        Album album = albumRepository.getReferenceById(albumId);
+
+        // 저장할 파일 정보 객체 생성
+        File uploadedFile = File.builder()
+                .uploader(uploader)
+                .album(album)
+                // TODO: null값 채우기
+                .thumbUrl(null)
+                .displayUrl(null)
+                .fileType(fileType)
+                .metadata(metadata)
+                .createdAt(createdAt)
+                .build();
+
+        // DB에 저장
+        fileRepository.save(uploadedFile);
+
+        // 저장된 파일 정보 반환
+        return uploadedFile;
     }
 
     public String extractExtension(String fileName){
