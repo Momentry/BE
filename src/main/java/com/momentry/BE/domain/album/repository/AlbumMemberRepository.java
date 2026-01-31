@@ -6,6 +6,7 @@ import java.util.Optional;
 import com.momentry.BE.domain.album.dto.AlbumCountDto;
 import com.momentry.BE.domain.album.dto.AlbumUrlDto;
 import com.momentry.BE.domain.album.entity.Album;
+import com.momentry.BE.domain.album.entity.MemberAlbumPermission;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -36,4 +37,8 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
     @Query("SELECT new com.momentry.BE.domain.album.dto.AlbumUrlDto(am.album.id, am.user.profileImageUrl) FROM AlbumMember am " +
             "WHERE am.album.id IN :albumIds ORDER BY am.user.username ASC")
     List<AlbumUrlDto> findMemberProfilesByAlbumIds(List<Long> albumIds, Limit limit);
+
+    @Query("SELECT am.permission FROM AlbumMember am " +
+            "WHERE am.album.id = :albumId AND am.user.id = :userId")
+    Optional<MemberAlbumPermission> findPermissionByAlbumIdAndUserId(Long albumId, Long userId);
 }

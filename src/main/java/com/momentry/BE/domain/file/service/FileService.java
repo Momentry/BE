@@ -1,7 +1,9 @@
 package com.momentry.BE.domain.file.service;
 
 import com.momentry.BE.domain.album.entity.Album;
+import com.momentry.BE.domain.album.entity.MemberAlbumPermission;
 import com.momentry.BE.domain.album.repository.AlbumRepository;
+import com.momentry.BE.domain.album.service.AlbumPermissionService;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileType;
@@ -27,6 +29,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FileService {
     private final S3Util s3Util;
+    private final AlbumPermissionService albumPermissionService;
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
     private final AlbumRepository albumRepository;
@@ -35,8 +38,11 @@ public class FileService {
     public FileResult uploadFile(Long uploaderId, Long albumId, MultipartFile file, String metadata, LocalDateTime createdAt){
         // TODO: 파일 업로드 시 예외 처리
         // 1. 앨범이 없는 경우
-        // 2. 앨범에 업로드할 권한이 없는 경우 -> AOP로 분리
-        // 3. 최대 업로드 가능한 크기 초과한 경우?
+        // 2. 앨범에 업로드할 권한이 없는 경우
+        albumPermissionService.checkPermission(uploaderId, albumId, MemberAlbumPermission.EDITOR);
+        // 3. 최대 업로드 가능한 크기 초과한 경우
+
+
 
         // 파일 타입(Image, Video) 체크
         FileType fileType = FileType.fromContentType(file.getContentType());
