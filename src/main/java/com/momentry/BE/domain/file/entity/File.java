@@ -67,4 +67,19 @@ public class File {
 
         this.likesCount = 0L; // 기본값은 0
     }
+
+    public void incrementLikesCount(){
+        if(this.likesCount == null){
+            this.likesCount = 0L;
+        }
+        this.likesCount++;
+    }
+
+    public void decrementLikesCount(){
+        if (this.likesCount == null || this.likesCount <= 0L) {
+            this.likesCount = 0L;
+        } else {
+            this.likesCount--;
+        }
+    }
 }

@@ -6,10 +6,13 @@ import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.service.AlbumPermissionService;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.entity.File;
+import com.momentry.BE.domain.file.entity.FileLike;
 import com.momentry.BE.domain.file.entity.FileType;
+import com.momentry.BE.domain.file.repository.FileLikeRepository;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.repository.UserRepository;
+import com.momentry.BE.global.exception.BusinessException;
 import com.momentry.BE.global.util.S3Util;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +34,7 @@ public class FileService {
     private final S3Util s3Util;
     private final AlbumPermissionService albumPermissionService;
     private final FileRepository fileRepository;
+    private final FileLikeRepository fileLikeRepository;
     private final UserRepository userRepository;
     private final AlbumRepository albumRepository;
 
@@ -114,14 +118,52 @@ public class FileService {
 
 
     @Transactional
-    public void deleteFile(Long uploaderId, Long albumId, Long targetFileId){
+    public void deleteFile(Long userId, Long albumId, Long targetFileId){
         // 해당 앨범의 EDITOR 이상 권한이 있어야 삭제 가능
-        albumPermissionService.checkPermission(uploaderId, albumId, MemberAlbumPermission.EDITOR);
+        albumPermissionService.checkPermission(userId, albumId, MemberAlbumPermission.EDITOR);
 
         File targetFile = fileRepository.findById(targetFileId)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 파일입니다."));
         s3Util.deleteAll(targetFile);
         fileRepository.delete(targetFile);
+    }
+
+    @Transactional
+    public void likeFile(Long userId, Long albumId, Long targetFileId){
+        // 해당 앨범의 VIEWER 이상 권한이 있어야 좋아요 가능
+        albumPermissionService.checkPermission(userId, albumId, MemberAlbumPermission.VIEWER);
+
+        // 중복 좋아요 체크 (이미 좋아요를 눌렀는지 확인)
+        if (fileLikeRepository.existsByFileIdAndUserId(targetFileId, userId)) {
+            throw new RuntimeException("이미 좋아요를 누른 파일입니다."); // 중복 방지
+        }
+
+        FileLike fileLike = FileLike.builder()
+                .file(fileRepository.getReferenceById(targetFileId))
+                .user(userRepository.getReferenceById(userId))
+                .build();
+
+        // DB에 저장
+        fileLikeRepository.save(fileLike);
+
+        // 해당 파일의 좋아요 수 증가
+        File file = fileRepository.findById(targetFileId)
+                .orElseThrow(() -> new EntityNotFoundException("파일을 찾을 수 없습니다."));
+        file.incrementLikesCount();
+    }
+
+    @Transactional
+    public void unlikeFile(Long userId, Long albumId, Long targetFileId){
+        // 해당 앨범의 VIEWER 이상 권한이 있어야 좋아요 취소 가능
+        albumPermissionService.checkPermission(userId, albumId, MemberAlbumPermission.VIEWER);
+
+        // 좋아요 데이터 삭제
+        fileLikeRepository.deleteByFileIdAndUserId(targetFileId, userId);
+
+        // 해당 파일의 좋아요 수 감소
+        File file = fileRepository.findById(targetFileId)
+                .orElseThrow(() -> new EntityNotFoundException("파일을 찾을 수 없습니다."));
+        file.decrementLikesCount();
     }
 
 
