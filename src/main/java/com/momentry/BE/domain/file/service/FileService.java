@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -30,6 +31,7 @@ public class FileService {
     private final UserRepository userRepository;
     private final AlbumRepository albumRepository;
 
+    @Transactional
     public FileResult uploadFile(Long uploaderId, Long albumId, MultipartFile file, String metadata, LocalDateTime createdAt){
         // TODO: 파일 업로드 시 예외 처리
         // 1. 앨범이 없는 경우
@@ -45,16 +47,27 @@ public class FileService {
 
         // 파일 타입에 따른 업로드 로직 분기
         try{
+            String basePath = "albums/" + albumId + "/" + fileId + "/";
             if(fileType == FileType.IMAGE){
                 // 이미지 업로드
-                uploadImage(albumId, fileId, extension, file);
+                uploadImage(extension, file, basePath);
             }else if(fileType == FileType.VIDEO){
                 // 비디오 업로드
-                uploadVideo(albumId, fileId, extension, file);
+                uploadVideo(extension, file, basePath);
             }
 
             // DB에 파일 정보 저장
-            File uploadedFile = saveFileInfo(uploaderId, albumId, fileType, metadata, createdAt);
+            // TODO: null값 채우기
+            File uploadedFile = saveFileInfo(
+                    uploaderId,
+                    albumId,
+                    fileType,
+                    metadata,
+                    createdAt,
+                    basePath + "original" + extension,
+                    basePath + "thumbnail" + extension,
+                    basePath + "display" + extension
+            );
 
             // 업로드 결과 반환
             return FileResult.of(uploadedFile);
@@ -63,8 +76,11 @@ public class FileService {
         }
     }
 
-    public void uploadImage(Long albumId, String fileId, String extension, MultipartFile imageFile) throws IOException{
-        String basePath = "albums/" + albumId + "/" + fileId + "/";
+    public void uploadImage(
+            String extension,
+            MultipartFile imageFile,
+            String basePath
+    ) throws IOException{
         // 원본 파일 업로드
         s3Util.upload(
                 basePath + "original" + extension,
@@ -75,9 +91,11 @@ public class FileService {
         // TODO: 1차/2차 파일 압축
     }
 
-    public void uploadVideo(Long albumId, String fileId, String extension, MultipartFile videoFile) throws IOException{
-        String basePath = "albums/" + albumId + "/" + fileId + "/";
-
+    public void uploadVideo(
+            String extension,
+            MultipartFile videoFile,
+            String basePath
+    ) throws IOException{
         // 원본 파일 업로드
         s3Util.upload(
                 basePath + "original" + extension,
@@ -88,7 +106,16 @@ public class FileService {
         // TODO: 썸네일 추출 + 압축
     }
 
-    public File saveFileInfo(Long uploaderId, Long albumId, FileType fileType, String metadata, LocalDateTime createdAt){
+    private File saveFileInfo(
+            Long uploaderId,
+            Long albumId,
+            FileType fileType,
+            String metadata,
+            LocalDateTime createdAt,
+            String originUrl,
+            String thumbUrl,
+            String displayUrl
+    ){
         // 유저, 앨범 프록시 객체 생성
         User uploader = userRepository.getReferenceById(uploaderId);
         Album album = albumRepository.getReferenceById(albumId);
@@ -97,9 +124,9 @@ public class FileService {
         File uploadedFile = File.builder()
                 .uploader(uploader)
                 .album(album)
-                // TODO: null값 채우기
-                .thumbUrl(null)
-                .displayUrl(null)
+                .originUrl(originUrl)
+                .thumbUrl(thumbUrl)
+                .displayUrl(displayUrl)
                 .fileType(fileType)
                 .metadata(metadata)
                 .createdAt(createdAt)
@@ -112,7 +139,7 @@ public class FileService {
         return uploadedFile;
     }
 
-    public String extractExtension(String fileName){
+    private String extractExtension(String fileName){
         // 파일 이름이 null이면 확장자는 빈 문자열로 반환
         if(fileName == null) return "";
         return fileName.substring(fileName.lastIndexOf("."));

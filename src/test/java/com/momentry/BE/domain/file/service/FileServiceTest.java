@@ -36,7 +36,7 @@ public class FileServiceTest {
         );
 
         // 2. 메타데이터 생성
-        String metadata = "{테스트 메타데이터}";
+        String metadata = "{\"description\": \"테스트 메타데이터\", \"location\": \"서울\"}";
 
         // 3. 서비스 호출 (실제 S3 업로드 로직 실행)
         Long testAlbumId = 1L;
@@ -64,7 +64,7 @@ public class FileServiceTest {
         );
 
         // 2. 메타데이터 생성
-        String metadata = "{테스트 메타데이터}";
+        String metadata = "{\"description\": \"테스트 메타데이터\", \"location\": \"서울\"}";
 
         // 3. 서비스 호출 (실제 S3 업로드 로직 실행)
         Long testAlbumId = 1L;
