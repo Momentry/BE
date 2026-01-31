@@ -112,6 +112,20 @@ public class FileService {
         // TODO: 썸네일 추출 + 압축
     }
 
+
+    @Transactional
+    public void deleteFile(Long uploaderId, Long albumId, Long targetFileId){
+        // 해당 앨범의 EDITOR 이상 권한이 있어야 삭제 가능
+        albumPermissionService.checkPermission(uploaderId, albumId, MemberAlbumPermission.EDITOR);
+
+        File targetFile = fileRepository.findById(targetFileId)
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 파일입니다."));
+        s3Util.deleteAll(targetFile);
+        fileRepository.delete(targetFile);
+    }
+
+
+    // ========== 내부 사용 메서드 ==========
     private File saveFileInfo(
             Long uploaderId,
             Long albumId,
