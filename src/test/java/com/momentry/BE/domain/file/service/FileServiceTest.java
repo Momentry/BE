@@ -48,6 +48,9 @@ public class FileServiceTest {
         Long fileId = result.getId();
         assertThat(fileRepository.existsById(fileId)).isTrue();
 
+        // [추가] 람다가 S3 이벤트를 받고 처리할 시간을 줍니다 (최소 2~3초)
+        try { Thread.sleep(3000); } catch (InterruptedException e) { e.printStackTrace(); }
+
         // 2. 삭제
         fileService.deleteFile(userId, albumId, fileId);
 
