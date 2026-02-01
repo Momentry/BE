@@ -8,22 +8,21 @@ import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileLike;
 import com.momentry.BE.domain.file.entity.FileType;
+import com.momentry.BE.domain.file.exception.AlreadyLikedException;
+import com.momentry.BE.domain.file.exception.FileNotFoundException;
+import com.momentry.BE.domain.file.exception.FileStorageException;
 import com.momentry.BE.domain.file.repository.FileLikeRepository;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.repository.UserRepository;
-import com.momentry.BE.global.exception.BusinessException;
 import com.momentry.BE.global.util.S3Util;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -67,7 +66,6 @@ public class FileService {
             }
 
             // DB에 파일 정보 저장
-            // TODO: null값 채우기
             File uploadedFile = saveFileInfo(
                     uploaderId,
                     albumId,
@@ -82,7 +80,7 @@ public class FileService {
             // 업로드 결과 반환
             return FileResult.of(uploadedFile);
         }catch(IOException e){
-            throw new RuntimeException("파일 처리 중 오류 발생", e);
+            throw new FileStorageException();
         }
     }
 
@@ -123,7 +121,7 @@ public class FileService {
         albumPermissionService.checkPermission(userId, albumId, MemberAlbumPermission.EDITOR);
 
         File targetFile = fileRepository.findById(targetFileId)
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 파일입니다."));
+                .orElseThrow(FileNotFoundException::new);
         s3Util.deleteAll(targetFile);
         fileRepository.delete(targetFile);
     }
@@ -135,7 +133,7 @@ public class FileService {
 
         // 중복 좋아요 체크 (이미 좋아요를 눌렀는지 확인)
         if (fileLikeRepository.existsByFileIdAndUserId(targetFileId, userId)) {
-            throw new RuntimeException("이미 좋아요를 누른 파일입니다."); // 중복 방지
+            throw new AlreadyLikedException(); // 중복 방지
         }
 
         FileLike fileLike = FileLike.builder()
@@ -148,7 +146,7 @@ public class FileService {
 
         // 해당 파일의 좋아요 수 증가
         File file = fileRepository.findById(targetFileId)
-                .orElseThrow(() -> new EntityNotFoundException("파일을 찾을 수 없습니다."));
+                .orElseThrow(FileNotFoundException::new);
         file.incrementLikesCount();
     }
 
@@ -162,7 +160,7 @@ public class FileService {
 
         // 해당 파일의 좋아요 수 감소
         File file = fileRepository.findById(targetFileId)
-                .orElseThrow(() -> new EntityNotFoundException("파일을 찾을 수 없습니다."));
+                .orElseThrow(FileNotFoundException::new);
         file.decrementLikesCount();
     }
 
