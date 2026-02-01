@@ -72,10 +72,10 @@ public class UserController {
     @GetMapping("/{userId}/like-files")
     public ResponseEntity<ApiResponse<GetCurrentUserLikedFileListResponse>> getCurrentUserLikedFileList(
             @PathVariable Long userId,
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam String cursor,
             @RequestParam(defaultValue = "20") int size) {
         validateSelf(userId);
-        GetCurrentUserLikedFileListResponse response = userMasterService.getCurrentUserLikedFile(userId, page, size);
+        GetCurrentUserLikedFileListResponse response = userMasterService.getCurrentUserLikedFile(userId, cursor, size);
 
         return ApiResponse.ofSuccess(response);
     }

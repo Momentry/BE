@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -20,5 +21,22 @@ public interface FileLikeRepository extends JpaRepository<FileLike, Long> {
             WHERE fl.user.id = :userId
             ORDER BY fl.file.createdAt ASC
             """)
-    Slice<File> findLikedFileByUserId(Long userId, Pageable pageable);
+    List<File> findLikedFileByUserId(Long userId, Pageable pageable);
+
+    @Query("""
+            SELECT fl.file
+            FROM FileLike fl
+            JOIN fl.file f
+            LEFT JOIN FETCH f.album a
+            WHERE fl.user.id = :userId
+              AND (:cursorCreatedAt IS NULL OR (
+                  f.createdAt < :cursorCreatedAt OR (f.createdAt = :cursorCreatedAt AND f.id < :cursorId)
+              ))
+            ORDER BY f.createdAt DESC, f.id DESC
+            """)
+    List<File> findLikedFileByUserIdWithCursor(
+            Long userId,
+            LocalDateTime cursorCreatedAt,
+            Long cursorId,
+            Pageable pageable);
 }

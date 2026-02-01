@@ -166,23 +166,6 @@ public class UserMasterServiceTest {
                         testAlbum2Member3ProfileUrl)
         );
 
-        AlbumUrlDto testAlbum1File1ThumbnailUrl = new AlbumUrlDto(testAlbum1Id, "https://example.com/thumbnail1.jpg");
-        AlbumUrlDto testAlbum1File2ThumbnailUrl = new AlbumUrlDto(testAlbum1Id, "https://example.com/thumbnail2.jpg");
-        AlbumUrlDto testAlbum1File3ThumbnailUrl = new AlbumUrlDto(testAlbum1Id, "https://example.com/thumbnail3.jpg");
-        AlbumUrlDto testAlbum2File1ThumbnailUrl = new AlbumUrlDto(testAlbum2Id, "https://example.com/thumbnail4.jpg");
-        AlbumUrlDto testAlbum2File2ThumbnailUrl = new AlbumUrlDto(testAlbum2Id, "https://example.com/thumbnail5.jpg");
-        AlbumUrlDto testAlbum2File3ThumbnailUrl = new AlbumUrlDto(testAlbum2Id, "https://example.com/thumbnail6.jpg");
-        AlbumUrlDto testAlbum2File4ThumbnailUrl = new AlbumUrlDto(testAlbum2Id, "https://example.com/thumbnail7.jpg");
-
-        when(fileRepository.findThumbnailsByAlbumIds(albumIds, limit)).thenReturn(
-                List.of(
-                        testAlbum1File1ThumbnailUrl, testAlbum1File2ThumbnailUrl,
-                        testAlbum1File3ThumbnailUrl, testAlbum2File1ThumbnailUrl,
-                        testAlbum2File2ThumbnailUrl, testAlbum2File3ThumbnailUrl,
-                        testAlbum2File4ThumbnailUrl
-                )
-        );
-
         // 2. Then
         GetCurrentUserAlbumListResponse response = userMasterService.getCurrentUserAlbums(testUserId);
 
@@ -196,13 +179,6 @@ public class UserMasterServiceTest {
         assertThat(dto1.getFileCount()).isEqualTo(3);
         assertThat(dto1.getMemberProfiles()).hasSize(2)
                 .containsExactly("https://example.com/profile1.jpg", "https://example.com/profile2.jpg");
-        assertThat(dto1.getFileThumbnails())
-                .hasSize(3)
-                .containsExactly(
-                        "https://example.com/thumbnail1.jpg",
-                        "https://example.com/thumbnail2.jpg",
-                        "https://example.com/thumbnail3.jpg"
-                );
 
         // 두 번째 앨범(test album2) 검증
         // 두 번째 앨범(test album2) 전수 조사
@@ -221,24 +197,12 @@ public class UserMasterServiceTest {
                         "https://example.com/profile5.jpg"
                 );
 
-        // 앨범2 파일 썸네일 리스트 검증
-        assertThat(dto2.getFileThumbnails())
-                .hasSize(4)
-                .containsExactly(
-                        "https://example.com/thumbnail4.jpg",
-                        "https://example.com/thumbnail5.jpg",
-                        "https://example.com/thumbnail6.jpg",
-                        "https://example.com/thumbnail7.jpg"
-                );
-
-
         // 메서드 호출 여부 검증 (verify)
         verify(userService).getCurrentUser(testUserId);
         verify(albumService).getJoinedAlbums(testUser);
         verify(albumMemberRepository).countMembersByAlbumIds(albumIds);
         verify(fileRepository).countFilesByAlbumIds(albumIds);
         verify(albumMemberRepository).findMemberProfilesByAlbumIds(albumIds,limit);
-        verify(fileRepository).findThumbnailsByAlbumIds(albumIds, limit);
     }
 
     @Test
@@ -273,7 +237,6 @@ public class UserMasterServiceTest {
         verify(albumMemberRepository, never()).countMembersByAlbumIds(any());
         verify(fileRepository, never()).countFilesByAlbumIds(any());
         verify(albumMemberRepository, never()).findMemberProfilesByAlbumIds(any(), eq(limit));
-        verify(fileRepository, never()).findThumbnailsByAlbumIds(any(), eq(limit));
     }
 
     @Test
@@ -347,22 +310,20 @@ public class UserMasterServiceTest {
         ReflectionTestUtils.setField(testFile1, "id", testFile1Id);
         ReflectionTestUtils.setField(testFile2, "id", testFile2Id);
 
-        int page = 1;
+        int page = 0;
         int size = 20;
-        Pageable pageable = PageRequest.of(page, size);
-        boolean hasNext = true;
-        Slice<File> likedFileSlice = new SliceImpl<>(List.of(testFile1, testFile2), pageable, hasNext);
+        Pageable pageable = PageRequest.of(page, size+1);
+        List<File> likedFileSlice = List.of(testFile1, testFile2);
 
         when(fileLikeRepository.findLikedFileByUserId(testUserId, pageable)).thenReturn(
                 likedFileSlice
         );
 
         // 2. When
-        GetCurrentUserLikedFileListResponse response = userMasterService.getCurrentUserLikedFile(testUserId, page, size);
+        GetCurrentUserLikedFileListResponse response = userMasterService.getCurrentUserLikedFile(testUserId, null, size);
 
         // 3 Then
         assertThat(response.getLikedFiles()).hasSize(2);
-        assertThat(response.isHasNext()).isTrue();
 
         LikedFileDto responseFile1 = response.getLikedFiles().get(0);
         assertThat(responseFile1.getFileId()).isEqualTo(testFile1Id);
@@ -389,7 +350,6 @@ public class UserMasterServiceTest {
     void getCurrentUserLikedFile_UserNotFound(){
         // 1. Given
         Long notFoundUserId = 999L;
-        int page = 1;
         int size = 20;
 
         // userService.update 호출 시 EntityNotFoundException이 발생하도록 설정
@@ -397,7 +357,7 @@ public class UserMasterServiceTest {
                 .thenThrow(new UserNotFoundException());
 
         // 2. When & Then
-        assertThatThrownBy(() -> userMasterService.getCurrentUserLikedFile(notFoundUserId, page, size))
+        assertThatThrownBy(() -> userMasterService.getCurrentUserLikedFile(notFoundUserId, null, size))
                 .isInstanceOf(UserNotFoundException.class);
     }
 }

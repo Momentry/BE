@@ -18,6 +18,8 @@ import java.util.List;
 public class LikedFileDto {
     private Long fileId;
     private String thumbnailUrl;
+    private String displayUrl;
+    private String originUrl;
     private String type; // "image" 또는 "video"
 
     @JsonFormat(pattern = "yyyy.MM.dd")
@@ -30,6 +32,8 @@ public class LikedFileDto {
     public LikedFileDto(File file){
         this.fileId = file.getId();
         this.thumbnailUrl = file.getThumbUrl();
+        this.displayUrl = file.getDisplayUrl();
+        this.originUrl = file.getOriginUrl();
         this.type = file.getFileType().name();
 
         this.createdAt = file.getCreatedAt().toLocalDate();

@@ -101,13 +101,6 @@ public class UserMasterService {
                         AlbumUrlDto::getAlbumId, // 그룹화 기준 (Key)
                         Collectors.mapping(AlbumUrlDto::getUrl, Collectors.toList()) // 벨류 변환 및 리스트 수집 (Value)
                 ));
-
-        Map<Long, List<String>> fileThumbnailImageMap = fileRepository.findThumbnailsByAlbumIds(albumIds, Limit.of(6))
-                .stream()
-                .collect(Collectors.groupingBy(
-                        AlbumUrlDto::getAlbumId,
-                        Collectors.mapping(AlbumUrlDto::getUrl, Collectors.toList())
-                ));
         
         // 앨범 별로 albumHeaderDto를 생성해서 list를 만듬
         List<AlbumHeaderDto> albumHeaders = albums.stream().map(album -> {
@@ -120,7 +113,6 @@ public class UserMasterService {
                     .memberCount(memberCountMap.getOrDefault(albumId, 0))
                     .fileCount(fileCountMap.getOrDefault(albumId, 0))
                     .memberProfiles(memberProfileImageMap.get(albumId))
-                    .fileThumbnails(fileThumbnailImageMap.get(albumId))
                     .createdAt(album.getCreatedAt().toLocalDate())
                     .build();
         }).toList();
@@ -129,21 +121,36 @@ public class UserMasterService {
     }
 
     @Transactional(readOnly = true)
-    public GetCurrentUserLikedFileListResponse getCurrentUserLikedFile(Long userId, int page, int size) {
+    public GetCurrentUserLikedFileListResponse getCurrentUserLikedFile(Long userId, String cursor, int pageSize) {
         User user = userService.getCurrentUser(userId);
 
-        Pageable pageable = PageRequest.of(page, size);
+        FileCursor decodedCursor = parseCursor(cursor);
+        Pageable pageable = PageRequest.of(0, pageSize + 1);
 
         // 사용자의 좋아요 목록에 있는 파일 리스트를 좋아요의 최신순으로 가져오기
-        Slice<File> likedFiles = fileLikeRepository.findLikedFileByUserId(user.getId(), pageable);
+        List<File> likedFiles = (decodedCursor == null)
+                ? fileLikeRepository.findLikedFileByUserId(user.getId(), pageable)
+                : fileLikeRepository.findLikedFileByUserIdWithCursor(user.getId(), decodedCursor.getCreatedAt(), decodedCursor.getId(), pageable);
+
+        boolean hasNext = likedFiles.size() > pageSize;
+
+        if (hasNext) {
+            likedFiles = likedFiles.subList(0, pageSize);
+        }
+
+        String nextCursor = null;
+        if (!likedFiles.isEmpty()) {
+            File lastFile = likedFiles.get(likedFiles.size() - 1);
+            nextCursor = CursorUtil.encodeCursor(lastFile.getCreatedAt(), lastFile.getId());
+        }
 
         // Dto로 가공하기
-        List<LikedFileDto> likedFileListDto = likedFiles.getContent().stream()
+        List<LikedFileDto> likedFileListDto = likedFiles.stream()
                 .map(LikedFileDto::new)
                 .toList();
 
         // 반환하기
-        return new GetCurrentUserLikedFileListResponse(likedFileListDto, likedFiles.hasNext());
+        return new GetCurrentUserLikedFileListResponse(likedFileListDto, nextCursor);
     }
 
     @Transactional(readOnly = true)

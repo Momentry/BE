@@ -13,5 +13,5 @@ import java.util.List;
 @NoArgsConstructor
 public class GetCurrentUserLikedFileListResponse {
     private List<LikedFileDto> likedFiles;
-    private boolean hasNext;
+    private String nextCursor;
 }
