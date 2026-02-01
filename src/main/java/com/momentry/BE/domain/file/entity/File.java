@@ -18,6 +18,10 @@ public class File {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // S3 파일명으로 사용되는 UUID 저장
+    @Column(nullable = false, unique = true)
+    private String fileKey;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "album_id", nullable = false)
     private Album album;
@@ -47,15 +51,17 @@ public class File {
     private LocalDateTime createdAt;
 
     @Builder
-    public File(Album album, String originUrl, String thumbUrl, String displayUrl,
+    public File(Album album, String fileKey, String originUrl, String thumbUrl, String displayUrl,
                 String metadata, FileType fileType, User uploader, LocalDateTime createdAt) {
         // 유효성 체크: 필수 값이 없으면 객체 생성 자체를 막음
         Assert.notNull(album, "앨범은 필수 값입니다.");
+        Assert.hasText(fileKey, "파일 키는 필수 값입니다.");
         Assert.hasText(originUrl, "원본 url은 필수 값입니다.");
         Assert.notNull(fileType, "파일 타입은 필수 정보입니다.");
         Assert.notNull(uploader, "게시자 정보는 필수 값입니다.");
 
         this.album = album;
+        this.fileKey = fileKey;
         this.originUrl = originUrl;
         this.thumbUrl = thumbUrl;
         this.displayUrl = displayUrl;
@@ -80,5 +86,10 @@ public class File {
         } else {
             this.likesCount--;
         }
+    }
+
+    public void updatePostProcessingResults(String thumbUrl, String displayUrl) {
+        this.thumbUrl = thumbUrl;
+        this.displayUrl = displayUrl;
     }
 }

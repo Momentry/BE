@@ -1,6 +1,7 @@
 package com.momentry.BE.domain.file.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Pageable;
@@ -88,4 +89,7 @@ public interface FileRepository extends JpaRepository<File, Long> {
      * @param album 앨범
      */
     void deleteByAlbum(Album album);
+
+    // UUID(fileKey)로 파일 엔티티 조회
+    Optional<File> findByFileKey(String fileKey);
 }
