@@ -27,6 +27,9 @@ spring:
         static: ${AWS_S3_REGION:ap-northeast-2}
       s3:
         bucket: ${AWS_S3_BUCKET}
+      sqs:
+        listener:
+          acknowledgement-mode: ON_SUCCESS
 
 server:
   port: 8080
@@ -58,3 +61,7 @@ cloudfront:
   secure: ${CF_COOKIE_SECURE:true}
   http-only: ${CF_COOKIE_HTTP_ONLY:true}
   same-site: ${CF_COOKIE_SAME_SITE:None}
+
+aws:
+  sqs:
+    queue-name: momentry-media-queue

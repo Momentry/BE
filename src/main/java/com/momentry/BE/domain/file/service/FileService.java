@@ -77,7 +77,8 @@ public class FileService {
                     createdAt,
                     originalFilePath,
                     null,
-                    null
+                    null,
+                    fileId
             );
 
             // 업로드 결과 반환
@@ -175,7 +176,8 @@ public class FileService {
             LocalDateTime createdAt,
             String originUrl,
             String thumbUrl,
-            String displayUrl
+            String displayUrl,
+            String fileKey
     ){
         // 유저, 앨범 프록시 객체 생성
         User uploader = userRepository.getReferenceById(uploaderId);
@@ -191,6 +193,7 @@ public class FileService {
                 .fileType(fileType)
                 .metadata(metadata)
                 .createdAt(createdAt)
+                .fileKey(fileKey)
                 .build();
 
         // DB에 저장
