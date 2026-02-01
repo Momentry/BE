@@ -54,15 +54,18 @@ public class FileService {
         String fileId = UUID.randomUUID().toString();
         String extension = extractExtension(file.getOriginalFilename());
 
-        // 파일 타입에 따른 업로드 로직 분기
+        // 파일 업로드 로직
         try{
-            String basePath = "albums/" + albumId + "/" + fileId + "/";
+            // 원본 파일 저장 경로 ( original/{albumId}/{fileId}.{extension} )
+            String originalFilePath = "original/" + albumId + "/" + fileId + extension;
+
+            // 파일 타입에 따른 업로드 로직 분기
             if(fileType == FileType.IMAGE){
                 // 이미지 업로드
-                uploadImage(extension, file, basePath);
+                uploadImage(file, originalFilePath);
             }else if(fileType == FileType.VIDEO){
                 // 비디오 업로드
-                uploadVideo(extension, file, basePath);
+                uploadVideo(file, originalFilePath);
             }
 
             // DB에 파일 정보 저장
@@ -72,9 +75,9 @@ public class FileService {
                     fileType,
                     metadata,
                     createdAt,
-                    basePath + "original" + extension,
-                    basePath + "thumbnail" + extension,
-                    basePath + "display" + extension
+                    originalFilePath,
+                    null,
+                    null
             );
 
             // 업로드 결과 반환
@@ -85,33 +88,31 @@ public class FileService {
     }
 
     public void uploadImage(
-            String extension,
             MultipartFile imageFile,
-            String basePath
+            String originalFilePath
     ) throws IOException{
         // 원본 파일 업로드
         s3Util.upload(
-                basePath + "original" + extension,
+                originalFilePath,
                 imageFile.getInputStream(),
                 imageFile.getSize()
         );
 
-        // TODO: 1차/2차 파일 압축
+        // 1차/2차 파일 압축 -> Lambda에서 수행
     }
 
     public void uploadVideo(
-            String extension,
             MultipartFile videoFile,
-            String basePath
+            String originalFilePath
     ) throws IOException{
         // 원본 파일 업로드
         s3Util.upload(
-                basePath + "original" + extension,
+                originalFilePath,
                 videoFile.getInputStream(),
                 videoFile.getSize()
         );
 
-        // TODO: 썸네일 추출 + 압축
+        // 썸네일 추출 + 압축 -> Lambda에서 수행
     }
 
 
