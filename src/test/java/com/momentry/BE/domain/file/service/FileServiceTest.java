@@ -1,18 +1,23 @@
 package com.momentry.BE.domain.file.service;
 
 import com.momentry.BE.domain.file.dto.FileResult;
+import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import jakarta.persistence.EntityManager;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,6 +30,7 @@ public class FileServiceTest {
     @Autowired private EntityManager em; // 삭제 검증을 위해 추가
 
     @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED) // 트랜잭션 미반영
     @DisplayName("파일 업로드 및 DB 삭제 검증 테스트 (이미지/비디오 공통)")
     void uploadAndDeleteVerificationTest() throws IOException {
         // [준비] 1번 유저(Manager), 1번 앨범 사용
@@ -48,15 +54,22 @@ public class FileServiceTest {
         Long fileId = result.getId();
         assertThat(fileRepository.existsById(fileId)).isTrue();
 
-        // [추가] 람다가 S3 이벤트를 받고 처리할 시간을 줍니다 (최소 2~3초)
-        try { Thread.sleep(3000); } catch (InterruptedException e) { e.printStackTrace(); }
+        // displayUrl, thumbnailUrl이 반영되기까지 대기
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .pollInterval(Duration.ofMillis(500))
+                .until(() -> {
+                    // em.clear() 대신 findById를 새로 호출하여 최신 DB 데이터 확인
+                    File fileInfo = fileRepository.findById(fileId).orElse(null);
+                    return fileInfo != null && fileInfo.getThumbUrl() != null;
+                });
 
         // 2. 삭제
         fileService.deleteFile(userId, albumId, fileId);
 
         // 3. DB 반영 강제 수행 및 영속성 컨텍스트 초기화 (삭제 확인을 위한 핵심)
-        em.flush();
-        em.clear();
+//        em.flush();
+//        em.clear();
 
         // 4. 삭제 검증 (DB에 데이터가 없어야 함)
         assertThat(fileRepository.existsById(fileId)).isFalse();
