@@ -2,6 +2,7 @@ package com.momentry.BE.global.util;
 
 import com.momentry.BE.domain.file.entity.File;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -19,6 +20,7 @@ import java.time.Duration;
 import static org.springframework.util.StringUtils.hasText;
 
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class S3Util {
     private final S3Client s3Client;

@@ -25,45 +25,45 @@ repositories {
 }
 
 dependencies {
-	dependencies {
-		// =========== 필수 의존성 ===========
-		implementation 'org.springframework.boot:spring-boot-starter-validation'
-		implementation 'org.springframework.boot:spring-boot-starter-web'
-		implementation 'org.springframework.boot:spring-boot-starter-security'
-		compileOnly 'org.projectlombok:lombok'
-		annotationProcessor 'org.projectlombok:lombok'
-		developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	// =========== 필수 의존성 ===========
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-		implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
-		implementation 'io.jsonwebtoken:jjwt-impl:0.12.6'
-		implementation 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	implementation 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	implementation 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
-		// Google ID Token 검증을 위한 의존성
-		implementation 'com.google.api-client:google-api-client:2.7.0'
-		implementation 'com.google.oauth-client:google-oauth-client:1.36.0'
-		implementation 'com.google.http-client:google-http-client-jackson2:1.45.0'
+	// Google ID Token 검증을 위한 의존성
+	implementation 'com.google.api-client:google-api-client:2.7.0'
+	implementation 'com.google.oauth-client:google-oauth-client:1.36.0'
+	implementation 'com.google.http-client:google-http-client-jackson2:1.45.0'
 
-		// =========== DB ===========
-		implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-		runtimeOnly 'com.mysql:mysql-connector-j'
+	// =========== DB ===========
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	runtimeOnly 'com.mysql:mysql-connector-j'
 
-		// =========== CloudFront Signed Cookie ===========
-		implementation platform('software.amazon.awssdk:bom:2.25.59')
-		implementation 'software.amazon.awssdk:cloudfront'
+	// =========== AWS SDK ===========
+	implementation enforcedPlatform('software.amazon.awssdk:bom:2.25.59')
 
-		// =========== AWS S3 ===========
-		implementation 'software.amazon.awssdk:s3:2.25.17'
+	// =========== CloudFront Signed Cookie ===========
+	implementation 'software.amazon.awssdk:cloudfront'
 
-		// =========== AWS SQS ===========
-		implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs:3.3.0'
+	// =========== AWS S3 ===========
+	implementation 'software.amazon.awssdk:s3'
 
-		// =========== Test ===========
-		testImplementation 'org.springframework.boot:spring-boot-starter-test'
-		testImplementation 'org.springframework.security:spring-security-test'
-		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-		testImplementation 'org.mockito:mockito-core:5.11.0'
-		testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
-	}
+	// =========== AWS SQS ===========
+	implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs:3.3.0'
+
+	// =========== Test ===========
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation 'org.mockito:mockito-core:5.11.0'
+	testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
 }
 
 tasks.named('test') {

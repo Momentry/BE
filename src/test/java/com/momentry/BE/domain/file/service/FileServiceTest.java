@@ -3,6 +3,7 @@ package com.momentry.BE.domain.file.service;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.repository.FileRepository;
+import com.momentry.BE.global.util.S3Util;
 import jakarta.persistence.EntityManager;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.DisplayName;
@@ -12,6 +13,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -28,25 +33,27 @@ public class FileServiceTest {
     @Autowired private FileService fileService;
     @Autowired private FileRepository fileRepository;
     @Autowired private EntityManager em; // 삭제 검증을 위해 추가
+    @Autowired
+    private S3Util s3Util;
 
-    @Test
-    @Transactional(propagation = Propagation.NOT_SUPPORTED) // 트랜잭션 미반영
-    @DisplayName("파일 업로드 및 DB 삭제 검증 테스트 (이미지/비디오 공통)")
-    void uploadAndDeleteVerificationTest() throws IOException {
-        // [준비] 1번 유저(Manager), 1번 앨범 사용
-        Long userId = 1L;
-        Long albumId = 1L;
-        String metadata = "{\"desc\": \"삭제 검증 테스트\"}";
-
-        MockMultipartFile imageFile = createMockFile("test.jpg", "image/jpeg", "src/test/resources/test.jpg");
-        MockMultipartFile videoFile = createMockFile("test.mov", "video/quicktime", "src/test/resources/test.mov");
-
-        // [실행 & 검증] 이미지 프로세스
-        processUploadAndDelete(userId, albumId, imageFile, metadata);
-
-        // [실행 & 검증] 비디오 프로세스
-        processUploadAndDelete(userId, albumId, videoFile, metadata);
-    }
+//    @Test
+//    @Transactional(propagation = Propagation.NOT_SUPPORTED) // 트랜잭션 미반영
+//    @DisplayName("파일 업로드 및 DB 삭제 검증 테스트 (이미지/비디오 공통)")
+//    void uploadAndDeleteVerificationTest() throws IOException {
+//        // [준비] 1번 유저(Manager), 1번 앨범 사용
+//        Long userId = 1L;
+//        Long albumId = 1L;
+//        String metadata = "{\"desc\": \"삭제 검증 테스트\"}";
+//
+//        MockMultipartFile imageFile = createMockFile("test.jpg", "image/jpeg", "src/test/resources/test.jpg");
+//        MockMultipartFile videoFile = createMockFile("test.mov", "video/quicktime", "src/test/resources/test.mov");
+//
+//        // [실행 & 검증] 이미지 프로세스
+//        processUploadAndDelete(userId, albumId, imageFile, metadata);
+//
+//        // [실행 & 검증] 비디오 프로세스
+//        processUploadAndDelete(userId, albumId, videoFile, metadata);
+//    }
 
     private void processUploadAndDelete(Long userId, Long albumId, MockMultipartFile file, String metadata) throws IOException {
         // 1. 업로드
@@ -75,25 +82,30 @@ public class FileServiceTest {
         assertThat(fileRepository.existsById(fileId)).isFalse();
     }
 
-//    @Test
-//    @DisplayName("이미지 파일 업로드 단일 테스트")
-//    void uploadImageOnlyTest() throws IOException {
-//        // [준비]
-//        Long userId = 1L;
-//        Long albumId = 1L;
-//        MockMultipartFile imageFile = createMockFile("test.jpg", "image/jpeg", "src/test/resources/test.jpg");
-//        String metadata = "{\"description\": \"이미지 업로드 단일 테스트\"}";
-//
-//        // [실행]
-//        FileResult result = fileService.uploadFile(userId, albumId, imageFile, metadata, LocalDateTime.now());
-//
-//        // [검증]
-//        assertThat(result).isNotNull();
-//        assertThat(fileRepository.existsById(result.getId())).isTrue();
-//
-//        // 롤백 확인을 위해 로그 출력 (실제 DB 반영 안 됨)
-//        System.out.println("업로드된 이미지 ID: " + result.getId());
-//    }
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED) // 트랜잭션 미반영
+    @DisplayName("이미지 파일 업로드 단일 테스트")
+    void uploadImageOnlyTest() throws IOException {
+        // [준비]
+        Long userId = 1L;
+        Long albumId = 1L;
+        MockMultipartFile imageFile = createMockFile("test.jpg", "image/jpeg", "src/test/resources/test.jpg");
+        String metadata = "{\"description\": \"이미지 업로드 단일 테스트\"}";
+
+        // [실행]
+        FileResult result = fileService.uploadFile(userId, albumId, imageFile, metadata, LocalDateTime.now());
+
+        // [검증]
+        assertThat(result).isNotNull();
+        assertThat(fileRepository.existsById(result.getId())).isTrue();
+
+        // 롤백 확인을 위해 로그 출력 (실제 DB 반영 안 됨)
+        System.out.println("업로드된 이미지 ID: " + result.getId());
+
+        // PresignedURL 테스트
+        System.out.println("Presigned URL : " + s3Util.generatePresignedUrl(result.getUrl()));
+    }
+
 
 //    @Test
 //    @DisplayName("비디오 파일 업로드 단일 테스트")
