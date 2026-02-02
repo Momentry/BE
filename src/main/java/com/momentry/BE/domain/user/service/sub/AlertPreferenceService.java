@@ -33,12 +33,11 @@ public class AlertPreferenceService {
     }
 
     public void updateAlertPreference(LoginResponse.AlertDto request, User user){
-        AlertPreference alertPreference = AlertPreference.builder()
-                .user(user)
-                .albumCreated(request.isAlbumCreated())
-                .fileUploaded(request.isFileUploaded())
-                .invited(request.isInvited())
-                .build();
+        AlertPreference alertPreference = getAlertPreference(user);
+
+        alertPreference.setAlbumCreated(request.isAlbumCreated());
+        alertPreference.setInvited(request.isInvited());
+        alertPreference.setFileUploaded(request.isFileUploaded());
 
         saveAlertPreference(alertPreference);
     }

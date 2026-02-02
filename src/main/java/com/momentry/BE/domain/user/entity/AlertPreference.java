@@ -21,12 +21,15 @@ public class AlertPreference {
     private User user;
 
     @Column(nullable = false)
+    @Setter
     private Boolean albumCreated;
 
     @Column(nullable = false)
+    @Setter
     private Boolean invited;
 
     @Column(nullable = false)
+    @Setter
     private Boolean fileUploaded;
 
     @Builder

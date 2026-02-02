@@ -5,6 +5,7 @@ import com.momentry.BE.domain.user.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
@@ -22,6 +23,7 @@ public class LoginResponse {
     @Getter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class AlertDto {
         private boolean albumCreated;
         private boolean invited;
