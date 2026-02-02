@@ -47,7 +47,8 @@ public class S3Util {
             if(hasText(targetFile.getThumbUrl())) delete(targetFile.getThumbUrl());
             if(hasText(targetFile.getDisplayUrl())) delete(targetFile.getDisplayUrl());
         }catch (Exception e){
-            throw new RuntimeException("S3 파일 삭제 실패", e);
+            // 예외를 던지는 대신 로그를 남겨서 전체 프로세스가 멈추지 않게 함
+            log.error("S3 물리 파일 삭제 실패 (File ID: {}): {}", targetFile.getId(), e.getMessage());
         }
     }
 

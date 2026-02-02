@@ -24,9 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,10 +43,25 @@ public class FileService {
     private final UserRepository userRepository;
     private final AlbumRepository albumRepository;
     private final FileTagInfoRepository fileTagInfoRepository;
+    private final S3Presigner s3Presigner;
+
+    @Transactional
+    public List<FileResult> uploadFiles(Long uploaderId, Long albumId, List<MultipartFile> files){
+        // 유저 권한 체크
+        albumPermissionService.checkPermission(uploaderId, albumId, MemberAlbumPermission.EDITOR);
+
+        List<FileResult> fileResultList = new ArrayList<>();
+        for(MultipartFile file : files){
+            // TODO: 라이브러리 사용해서 메타데이터 추출 후 파라미터로 넘겨주는 코드 추가하기
+            FileResult newFile = uploadFile(uploaderId, albumId, file, null, null);
+            fileResultList.add(newFile);
+        }
+
+        return fileResultList;
+    }
 
     @Transactional
     public FileResult uploadFile(Long uploaderId, Long albumId, MultipartFile file, String metadata, LocalDateTime createdAt){
-        albumPermissionService.checkPermission(uploaderId, albumId, MemberAlbumPermission.EDITOR);
         // TODO: 파일 업로드 시 예외 처리
         // 3. 최대 업로드 가능한 크기 초과한 경우
 
@@ -115,12 +132,27 @@ public class FileService {
         // 썸네일 추출 + 압축 -> Lambda에서 수행
     }
 
-
     @Transactional
-    public void deleteFile(Long userId, Long albumId, Long targetFileId){
+    public void deleteFiles(Long userId, Long albumId, List<Long> targetFileIds){
         // 해당 앨범의 EDITOR 이상 권한이 있어야 삭제 가능
         albumPermissionService.checkPermission(userId, albumId, MemberAlbumPermission.EDITOR);
 
+        // 삭제 대상 일괄 조회
+        List<File> targetFiles = fileRepository.findAllById(targetFileIds);
+
+        // 파일 삭제
+        for(File targetFile : targetFiles){
+            // TODO: 해당 파일이 진짜 그 앨범 소속이 맞는지 체크?
+
+            // S3에서 삭제
+            s3Util.deleteAll(targetFile);
+        }
+        // DB에서 파일 정보 일괄 삭제
+        fileRepository.deleteAllInBatch(targetFiles);
+    }
+
+    @Transactional
+    public void deleteFile(Long userId, Long albumId, Long targetFileId){
         File targetFile = fileRepository.findById(targetFileId)
                 .orElseThrow(FileNotFoundException::new);
         s3Util.deleteAll(targetFile);
@@ -167,8 +199,11 @@ public class FileService {
 
 
     public GetFileDetailResponseDto getFileDetail(Long userId, Long albumId, Long targetFileId){
+        // 해당 앨범의 VIEWER 이상 권한이 있어야 상세 정보 조회 가능
+        albumPermissionService.checkPermission(userId, albumId, MemberAlbumPermission.VIEWER);
+
         // 파일 조회
-        File targetFile = fileRepository.findById(targetFileId)
+        File targetFile = fileRepository.findByIdWithUploader(targetFileId)
                 .orElseThrow(FileNotFoundException::new);
 
         // 좋아요 여부 확인

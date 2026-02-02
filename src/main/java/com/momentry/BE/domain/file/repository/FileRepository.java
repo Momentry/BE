@@ -92,4 +92,8 @@ public interface FileRepository extends JpaRepository<File, Long> {
 
     // UUID(fileKey)로 파일 엔티티 조회
     Optional<File> findByFileKey(String fileKey);
+
+    // 업로더 정보와 함께 파일 엔티티 조회
+    @Query("SELECT f FROM File f JOIN FETCH f.uploader WHERE f.id = :id")
+    Optional<File> findByIdWithUploader(@Param("id") Long id);
 }
