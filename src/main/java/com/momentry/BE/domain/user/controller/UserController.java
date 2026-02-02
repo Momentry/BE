@@ -18,7 +18,7 @@ import com.momentry.BE.security.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/api/user")
 @RequiredArgsConstructor
 public class UserController {
     private final UserMasterService userMasterService;
@@ -65,8 +65,8 @@ public class UserController {
     @GetMapping("/{userId}/like-files")
     public ResponseEntity<ApiResponse<GetCurrentUserLikedFileListResponse>> getCurrentUserLikedFileList(
             @PathVariable Long userId,
-            @RequestParam String cursor,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false, defaultValue = "20") int size) {
         validateSelf(userId);
         GetCurrentUserLikedFileListResponse response = userMasterService.getCurrentUserLikedFile(userId, cursor, size);
 
@@ -75,7 +75,7 @@ public class UserController {
 
     @GetMapping("/{userId}/files")
     public ResponseEntity<ApiResponse<GetCurrentUserFileListResponse>> getCurrentUserFileList(@PathVariable Long userId,
-            @RequestParam String cursor) {
+            @RequestParam(required = false) String cursor) {
         validateSelf(userId);
         GetCurrentUserFileListResponse response = userMasterService.getCurrentUserFileList(userId, cursor);
 
