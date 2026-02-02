@@ -29,11 +29,11 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
     @Query("SELECT am.album FROM AlbumMember am WHERE am.user.id = :userId")
     List<Album> findAlbumsByUserId(Long userId);
 
-    @Query("SELECT am.album.id AS albumId, COUNT(am) AS count FROM AlbumMember am " +
+    @Query("SELECT new com.momentry.BE.domain.album.dto.AlbumCountDto(am.album.id, CAST(COUNT(am) AS integer)) FROM AlbumMember am " +
             "WHERE am.album.id IN :albumIds GROUP BY am.album.id")
     List<AlbumCountDto> countMembersByAlbumIds(List<Long> albumIds);
 
-    @Query("SELECT am.album.id AS albumId, am.user.profileImageUrl AS contentUrl FROM AlbumMember am " +
+    @Query("SELECT new com.momentry.BE.domain.album.dto.AlbumUrlDto(am.album.id, am.user.profileImageUrl) FROM AlbumMember am " +
             "WHERE am.album.id IN :albumIds ORDER BY am.user.username ASC")
     List<AlbumUrlDto> findMemberProfilesByAlbumIds(List<Long> albumIds, Limit limit);
 }
