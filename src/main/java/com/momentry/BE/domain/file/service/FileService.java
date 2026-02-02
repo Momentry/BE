@@ -1,10 +1,12 @@
 package com.momentry.BE.domain.file.service;
 
 import com.momentry.BE.domain.album.entity.Album;
+import com.momentry.BE.domain.album.entity.AlbumTag;
 import com.momentry.BE.domain.album.entity.MemberAlbumPermission;
 import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.service.AlbumPermissionService;
 import com.momentry.BE.domain.file.dto.FileResult;
+import com.momentry.BE.domain.file.dto.GetFileDetailResponseDto;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileLike;
 import com.momentry.BE.domain.file.entity.FileType;
@@ -13,6 +15,7 @@ import com.momentry.BE.domain.file.exception.FileNotFoundException;
 import com.momentry.BE.domain.file.exception.FileStorageException;
 import com.momentry.BE.domain.file.repository.FileLikeRepository;
 import com.momentry.BE.domain.file.repository.FileRepository;
+import com.momentry.BE.domain.file.repository.FileTagInfoRepository;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.repository.UserRepository;
 import com.momentry.BE.global.util.S3Util;
@@ -24,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -36,16 +40,13 @@ public class FileService {
     private final FileLikeRepository fileLikeRepository;
     private final UserRepository userRepository;
     private final AlbumRepository albumRepository;
+    private final FileTagInfoRepository fileTagInfoRepository;
 
     @Transactional
     public FileResult uploadFile(Long uploaderId, Long albumId, MultipartFile file, String metadata, LocalDateTime createdAt){
-        // TODO: 파일 업로드 시 예외 처리
-        // 1. 앨범이 없는 경우
-        // 2. 앨범에 업로드할 권한이 없는 경우
         albumPermissionService.checkPermission(uploaderId, albumId, MemberAlbumPermission.EDITOR);
+        // TODO: 파일 업로드 시 예외 처리
         // 3. 최대 업로드 가능한 크기 초과한 경우
-
-
 
         // 파일 타입(Image, Video) 체크
         FileType fileType = FileType.fromContentType(file.getContentType());
@@ -76,8 +77,6 @@ public class FileService {
                     metadata,
                     createdAt,
                     originalFilePath,
-                    null,
-                    null,
                     fileId
             );
 
@@ -167,6 +166,25 @@ public class FileService {
     }
 
 
+    public GetFileDetailResponseDto getFileDetail(Long userId, Long albumId, Long targetFileId){
+        // 파일 조회
+        File targetFile = fileRepository.findById(targetFileId)
+                .orElseThrow(FileNotFoundException::new);
+
+        // 좋아요 여부 확인
+        Boolean isLiked = fileLikeRepository.existsByFileIdAndUserId(targetFileId, userId);
+
+        // 태그 목록 조회
+        List<Long> tags = fileTagInfoRepository.findTagIdsByFileId(targetFileId);
+
+        // 업로더의 프로필 이미지 접근용 presigned url 발급
+        String uploaderProfileImageUrl = s3Util.generatePresignedUrl(targetFile.getUploader().getProfileImageUrl());
+        // TODO: 이 값이 null이면 기본 이미지 url 넣어줘야함!
+
+        // DTO로 변환 후 반환
+        return GetFileDetailResponseDto.of(targetFile, tags, isLiked, uploaderProfileImageUrl);
+    }
+
     // ========== 내부 사용 메서드 ==========
     private File saveFileInfo(
             Long uploaderId,
@@ -175,8 +193,6 @@ public class FileService {
             String metadata,
             LocalDateTime createdAt,
             String originUrl,
-            String thumbUrl,
-            String displayUrl,
             String fileKey
     ){
         // 유저, 앨범 프록시 객체 생성
@@ -188,8 +204,6 @@ public class FileService {
                 .uploader(uploader)
                 .album(album)
                 .originUrl(originUrl)
-                .thumbUrl(thumbUrl)
-                .displayUrl(displayUrl)
                 .fileType(fileType)
                 .metadata(metadata)
                 .createdAt(createdAt)

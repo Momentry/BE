@@ -52,4 +52,8 @@ public interface FileTagInfoRepository extends JpaRepository<FileTagInfo, Long> 
     @Modifying // 벌크 연산임을 명시
     @Query("DELETE FROM FileTagInfo ft WHERE ft.file.id IN :fileIds AND ft.tag.id IN :tagIds")
     void deleteByFileIdsAndTagIds(List<Long> fileIds, List<Long> tagIds);
+
+    // 특정 파일 ID에 연결된 모든 태그 ID 리스트 조회
+    @Query("SELECT ft.tag.id FROM FileTagInfo ft WHERE ft.file.id = :fileId")
+    List<Long> findTagIdsByFileId(Long fileId);
 }
