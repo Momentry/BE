@@ -104,6 +104,7 @@ public class FileService {
         }
     }
 
+    @Transactional
     public void uploadImage(
             MultipartFile imageFile,
             String originalFilePath
@@ -118,6 +119,7 @@ public class FileService {
         // 1차/2차 파일 압축 -> Lambda에서 수행
     }
 
+    @Transactional
     public void uploadVideo(
             MultipartFile videoFile,
             String originalFilePath
@@ -197,7 +199,7 @@ public class FileService {
         file.decrementLikesCount();
     }
 
-
+    @Transactional
     public GetFileDetailResponseDto getFileDetail(Long userId, Long albumId, Long targetFileId){
         // 해당 앨범의 VIEWER 이상 권한이 있어야 상세 정보 조회 가능
         albumPermissionService.checkPermission(userId, albumId, MemberAlbumPermission.VIEWER);

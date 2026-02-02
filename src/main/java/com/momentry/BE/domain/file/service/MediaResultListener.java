@@ -2,6 +2,7 @@ package com.momentry.BE.domain.file.service;
 
 import com.momentry.BE.domain.file.dto.MediaProcessingResultDto;
 import com.momentry.BE.domain.file.entity.File;
+import com.momentry.BE.domain.file.exception.FileNotFoundException;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class MediaResultListener {
 
         if ("SUCCESS".equals(message.getStatus())) {
             File file = fileRepository.findByFileKey(message.getFileKey())
-                    .orElseThrow(() -> new RuntimeException("파일을 찾을 수 없습니다."));
+                    .orElseThrow(FileNotFoundException::new);
 
             // 리사이징된 경로 업데이트
             file.updatePostProcessingResults(

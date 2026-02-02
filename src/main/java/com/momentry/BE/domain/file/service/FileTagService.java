@@ -12,6 +12,7 @@ import com.momentry.BE.domain.file.repository.FileTagInfoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,7 @@ public class FileTagService {
     private final FileTagInfoRepository fileTagInfoRepository;
     private final AlbumTagRepository albumTagRepository;
 
+    @Transactional
     public void addTagsToFiles(List<Long> tagIdList, List<Long> fileIdList, Long userId, Long albumId){
         // EDITOR 이상의 권한을 가진 경우에만 태그 추가 가능
         albumPermissionService.checkPermission(userId, albumId, MemberAlbumPermission.EDITOR);
@@ -66,6 +68,7 @@ public class FileTagService {
         }
     }
 
+    @Transactional
     public void deleteTagsFromFiles(List<Long> tagIdList, List<Long> fileIdList, Long userId, Long albumId){
         // EDITOR 이상의 권한을 가진 경우에만 태그 삭제 가능
         albumPermissionService.checkPermission(userId, albumId, MemberAlbumPermission.EDITOR);

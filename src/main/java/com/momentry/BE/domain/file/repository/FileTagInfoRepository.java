@@ -48,7 +48,6 @@ public interface FileTagInfoRepository extends JpaRepository<FileTagInfo, Long> 
     List<FileTagInfo> findAllByFileIdIn(List<Long> fileIds);
 
     // 특정 파일 리스트와 태그 리스트 조합을 일괄 삭제
-    @Transactional
     @Modifying // 벌크 연산임을 명시
     @Query("DELETE FROM FileTagInfo ft WHERE ft.file.id IN :fileIds AND ft.tag.id IN :tagIds")
     void deleteByFileIdsAndTagIds(List<Long> fileIds, List<Long> tagIds);

@@ -1,10 +1,12 @@
 package com.momentry.BE.domain.album.service;
 
 import com.momentry.BE.domain.album.entity.AlbumTag;
+import com.momentry.BE.domain.album.exception.InvalidTagException;
 import com.momentry.BE.domain.album.repository.AlbumTagRepository;
 import com.momentry.BE.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -14,20 +16,23 @@ public class AlbumTagService {
 
     private final AlbumTagRepository albumTagRepository;
 
+    @Transactional
     public void checkTagsInAlbum(List<Long> tagIdList, Long albumId){
         List<AlbumTag> validTags = albumTagRepository.findAllById(tagIdList);
 
-        // 요청한 태그 개수와 DB에서 찾은 태그 개수가 같은지 확인 (존재하지 않는 ID 방지)
+        // 요청한 태그 개수와 DB에서 찾은 태그 개수가 같은지 확인 (존재 하지 않는 ID 방지)
         if (validTags.size() != tagIdList.size()) {
-            throw new BusinessException("존재하지 않는 태그가 포함되어 있습니다.", 400);
+            // 존재 하지 않는 태그가 포함 되어 있음
+            throw new InvalidTagException();
         }
 
-        // 모든 태그가 해당 앨범 소유인지 확인
+        // 모든 태그가 해당 앨범 소유 인지 확인
         boolean allTagsInAlbum = validTags.stream()
                 .allMatch(tag -> tag.getAlbum().getId().equals(albumId));
 
         if (!allTagsInAlbum) {
-            throw new BusinessException("앨범에 속하지 않은 태그가 포함되어 있습니다.", 400);
+            // 앨범에 속하지 않은 태그가 포함 되어 있음
+            throw new InvalidTagException();
         }
     }
 }
