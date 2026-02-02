@@ -64,4 +64,4 @@ cloudfront:
 
 aws:
   sqs:
-    queue-name: momentry-media-queue
+    queue-name: ${AWS_SQS_FILE_PROCESSED_QUEUE}
