@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MediaResultListener {
 
-    private final FileRepository fileRepository;
+    private final FileService fileService;
 
     @SqsListener(value = "${aws.sqs.queue-name}", factory = "defaultSqsListenerContainerFactory") // application.yml에 정의된 큐 이름
     @Transactional
@@ -23,16 +23,12 @@ public class MediaResultListener {
         log.info("SQS 메시지 수신: fileId={}, status={}", message.getFileKey(), message.getStatus());
 
         if ("SUCCESS".equals(message.getStatus())) {
-            File file = fileRepository.findByFileKey(message.getFileKey())
-                    .orElseThrow(FileNotFoundException::new);
-
-            // 리사이징된 경로 업데이트
-            file.updatePostProcessingResults(
+            // 파일 path 업데이트 메서드 호출
+            fileService.updateThumbDisplayPathOfFile(
+                    message.getFileKey(),
                     message.getThumbnailPath(),
                     message.getDisplayPath()
             );
-
-            log.info("파일 정보 업데이트 완료: ID={}", file.getId());
         } else {
             log.error("미디어 처리 실패 메시지 수신: fileId={}", message.getFileKey());
         }

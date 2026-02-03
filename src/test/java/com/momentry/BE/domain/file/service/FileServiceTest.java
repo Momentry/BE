@@ -1,6 +1,7 @@
 package com.momentry.BE.domain.file.service;
 
 import com.momentry.BE.domain.file.dto.FileResult;
+import com.momentry.BE.domain.file.dto.UploadFileDto;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import com.momentry.BE.global.util.S3Util;
@@ -57,7 +58,9 @@ public class FileServiceTest {
 
     private void processUploadAndDelete(Long userId, Long albumId, MockMultipartFile file, String metadata) throws IOException {
         // 1. 업로드
-        FileResult result = fileService.uploadFile(userId, albumId, file, metadata, LocalDateTime.now());
+        FileResult result = fileService.uploadFile(
+                UploadFileDto.of(userId, albumId, file, metadata, null)
+        );
         Long fileId = result.getId();
         assertThat(fileRepository.existsById(fileId)).isTrue();
 
@@ -93,7 +96,9 @@ public class FileServiceTest {
         String metadata = "{\"description\": \"이미지 업로드 단일 테스트\"}";
 
         // [실행]
-        FileResult result = fileService.uploadFile(userId, albumId, imageFile, metadata, LocalDateTime.now());
+        FileResult result = fileService.uploadFile(
+                UploadFileDto.of(userId, albumId, imageFile, metadata, null)
+        );
 
         // [검증]
         assertThat(result).isNotNull();

@@ -7,6 +7,7 @@ import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.service.AlbumPermissionService;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.dto.GetFileDetailResponseDto;
+import com.momentry.BE.domain.file.dto.UploadFileDto;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileLike;
 import com.momentry.BE.domain.file.entity.FileType;
@@ -53,7 +54,8 @@ public class FileService {
         List<FileResult> fileResultList = new ArrayList<>();
         for(MultipartFile file : files){
             // TODO: 라이브러리 사용해서 메타데이터 추출 후 파라미터로 넘겨주는 코드 추가하기
-            FileResult newFile = uploadFile(uploaderId, albumId, file, null, null);
+            UploadFileDto uploadFileDto = UploadFileDto.of(uploaderId, albumId, file, null, null);
+            FileResult newFile = uploadFile(uploadFileDto);
             fileResultList.add(newFile);
         }
 
@@ -61,9 +63,12 @@ public class FileService {
     }
 
     @Transactional
-    public FileResult uploadFile(Long uploaderId, Long albumId, MultipartFile file, String metadata, LocalDateTime createdAt){
+    public FileResult uploadFile(UploadFileDto uploadFileDto){
         // TODO: 파일 업로드 시 예외 처리
         // 3. 최대 업로드 가능한 크기 초과한 경우
+
+        MultipartFile file = uploadFileDto.getFile();
+        Long albumId = uploadFileDto.getAlbumId();
 
         // 파일 타입(Image, Video) 체크
         FileType fileType = FileType.fromContentType(file.getContentType());
@@ -88,11 +93,11 @@ public class FileService {
 
             // DB에 파일 정보 저장
             File uploadedFile = saveFileInfo(
-                    uploaderId,
+                    uploadFileDto.getUploaderId(),
                     albumId,
                     fileType,
-                    metadata,
-                    createdAt,
+                    uploadFileDto.getMetadata(),
+                    uploadFileDto.getCreatedAt(),
                     originalFilePath,
                     fileId
             );
@@ -221,6 +226,21 @@ public class FileService {
         // DTO로 변환 후 반환
         return GetFileDetailResponseDto.of(targetFile, tags, isLiked, uploaderProfileImageUrl);
     }
+
+    // SQS 메시지 수신 시 해당 파일의 thumbnail, display path를 업데이트
+    public void updateThumbDisplayPathOfFile(String fileKey, String thumbnailPath, String displayPath){
+        File file = fileRepository.findByFileKey(fileKey)
+                .orElseThrow(FileNotFoundException::new);
+
+        // 리사이징된 경로 업데이트
+        file.updatePostProcessingResults(
+                thumbnailPath,
+                displayPath
+        );
+
+        log.info("파일 정보 업데이트 완료: ID={}", file.getId());
+    }
+
 
     // ========== 내부 사용 메서드 ==========
     private File saveFileInfo(
