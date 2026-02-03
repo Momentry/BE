@@ -1,5 +1,6 @@
 package com.momentry.BE;
 
+import io.awspring.cloud.autoconfigure.sqs.SqsAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
@@ -7,11 +8,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @EnableJpaAuditing
 @ConfigurationPropertiesScan
-@SpringBootApplication
+@SpringBootApplication(exclude = {SqsAutoConfiguration.class})
 public class BeApplication {
-
 	public static void main(String[] args) {
 		SpringApplication.run(BeApplication.class, args);
 	}
-
 }

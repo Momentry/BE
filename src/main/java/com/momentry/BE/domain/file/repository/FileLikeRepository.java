@@ -5,7 +5,9 @@ import com.momentry.BE.domain.file.entity.FileLike;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -39,4 +41,10 @@ public interface FileLikeRepository extends JpaRepository<FileLike, Long> {
             LocalDateTime cursorCreatedAt,
             Long cursorId,
             Pageable pageable);
+
+    boolean existsByFileIdAndUserId(Long fileId, Long userId);
+
+    @Modifying
+    @Query("DELETE FROM FileLike fl WHERE fl.file.id = :fileId AND fl.user.id = :userId")
+    void deleteByFileIdAndUserId(@Param("fileId") Long fileId, @Param("userId") Long userId);
 }

@@ -18,6 +18,19 @@ spring:
         format_sql: true
         show_sql: false
 
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY}
+        secret-key: ${AWS_SECRET_KEY}
+      region:
+        static: ${AWS_S3_REGION:ap-northeast-2}
+      s3:
+        bucket: ${AWS_S3_BUCKET}
+      sqs:
+        listener:
+          acknowledgement-mode: ON_SUCCESS
+
 server:
   port: 8080
   url:
@@ -48,3 +61,7 @@ cloudfront:
   secure: ${CF_COOKIE_SECURE:true}
   http-only: ${CF_COOKIE_HTTP_ONLY:true}
   same-site: ${CF_COOKIE_SAME_SITE:None}
+
+aws:
+  sqs:
+    queue-name: ${AWS_SQS_FILE_PROCESSED_QUEUE}
