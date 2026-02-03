@@ -1,14 +1,15 @@
 package com.momentry.BE.global.service;
 
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.PrivateKey;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
@@ -17,98 +18,64 @@ import org.springframework.util.StringUtils;
 import com.momentry.BE.global.config.CloudFrontProperties;
 
 import lombok.RequiredArgsConstructor;
-import software.amazon.awssdk.services.cloudfront.CloudFrontUtilities;
-import software.amazon.awssdk.services.cloudfront.cookie.CookiesForCustomPolicy;
-import software.amazon.awssdk.services.cloudfront.model.CustomSignerRequest;
-
 
 /**
- * CloudFront Signed Cookie 서비스
- * 클라우드프론트를 통해 S3에 권한 검사 없이 접근하기 위한 쿠키를 발급하는 서비스.
- * 
- * @author koojawon
- * @since 2026-01-19
- * @version 1.0.0
- * @see <a href="https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_CreateCloudFrontOriginAccessIdentity.html">CreateCloudFrontOriginAccessIdentity</a>
- * @see <a href="https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_CreateCloudFrontOriginAccessIdentity.html">CreateCloudFrontOriginAccessIdentity</a>
+ * CloudFront Custom Auth Cookie 서비스 (CloudFront Function 연동용)
+ * 사용자 정의 쿠키를 발급하여 다중 앨범 접근 권한을 제어함.
  */
 @Service
 @RequiredArgsConstructor
 public class CloudFrontSignedCookieService {
 
     private final CloudFrontProperties properties;
-    private volatile PrivateKey cachedPrivateKey;
-    private final CloudFrontUtilities cloudFrontUtilities = CloudFrontUtilities.create();
+    
+    // yml에서 관리: cloudfront.secret-key (32자 이상 강력한 문자열 권장)
+    @Value("${cloudfront.secret-key}")
+    private String secretKey; 
 
-    public HttpHeaders buildSignedCookieHeaders(Long albumId) {
+    private static final String HMAC_ALGORITHM = "HmacSHA256";
+    private static final String COOKIE_NAME = "momentry_album_access";
+
+    public HttpHeaders buildSignedCookieHeaders(String userId, List<Long> allowedAlbumIds) {
         HttpHeaders headers = new HttpHeaders();
+        
         if (!properties.isEnabled()) {
             return headers;
         }
 
-        validateConfig();
+        String cookieValue = generateCookieValue(userId, allowedAlbumIds);
 
-        Instant expiresAt = Instant.now().plusSeconds(properties.getCookieTtlSeconds());
-        CustomSignerRequest request = CustomSignerRequest.builder()
-                .resourceUrl(resolveResourceUrl(albumId))
-                .privateKey(loadPrivateKey())
-                .keyPairId(properties.getKeyPairId())
-                .expirationDate(expiresAt)
-                .build();
-        CookiesForCustomPolicy cookies = cloudFrontUtilities.getCookiesForCustomPolicy(request);
-
-        headers.add(HttpHeaders.SET_COOKIE, createCookie("CloudFront-Policy", cookies.policyHeaderValue()).toString());
-        headers.add(HttpHeaders.SET_COOKIE, createCookie("CloudFront-Signature", cookies.signatureHeaderValue()).toString());
-        headers.add(HttpHeaders.SET_COOKIE, createCookie("CloudFront-Key-Pair-Id", cookies.keyPairIdHeaderValue()).toString());
+        headers.add(HttpHeaders.SET_COOKIE, createCookie(COOKIE_NAME, cookieValue).toString());
 
         return headers;
     }
 
-    private void validateConfig() {
-        if (!StringUtils.hasText(properties.getKeyPairId())
-                || !StringUtils.hasText(properties.getPrivateKey())
-                || !StringUtils.hasText(properties.getResourceUrl())) {
-            throw new IllegalStateException("CloudFront 설정이 누락되었습니다. (keyPairId/privateKey/resourceUrl)");
-        }
+    private String generateCookieValue(String userId, List<Long> albumIds) {
+        long exp = System.currentTimeMillis() / 1000 + properties.getCookieTtlSeconds();
+        
+        String albumsStr = albumIds.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+
+        String data = String.format("%s:%d:%s", userId, exp, albumsStr);
+
+        String signature = sign(data);
+
+        return data + ":" + signature;
     }
 
-    private String resolveResourceUrl(Long albumId) {
-        String resourceUrl = properties.getResourceUrl();
-        if (albumId == null) {
-            return resourceUrl;
-        }
-        return resourceUrl.replace("{albumId}", albumId.toString());
-    }
-
-    private PrivateKey loadPrivateKey() {
-        if (cachedPrivateKey != null) {
-            return cachedPrivateKey;
-        }
-
-        synchronized (this) {
-            if (cachedPrivateKey == null) {
-                cachedPrivateKey = parsePrivateKey(normalizePem(properties.getPrivateKey()));
-            }
-        }
-        return cachedPrivateKey;
-    }
-
-    private PrivateKey parsePrivateKey(String pem) {
+    private String sign(String data) {
         try {
-            String sanitized = pem
-                    .replace("-----BEGIN PRIVATE KEY-----", "")
-                    .replace("-----END PRIVATE KEY-----", "")
-                    .replaceAll("\\s", "");
-            byte[] decoded = Base64.getDecoder().decode(sanitized.getBytes(StandardCharsets.UTF_8));
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decoded);
-            return KeyFactory.getInstance("RSA").generatePrivate(keySpec);
-        } catch (IllegalArgumentException | GeneralSecurityException e) {
-            throw new IllegalStateException("PrivateKey는 PKCS#8 PEM 형식이어야 합니다.", e);
+            Mac mac = Mac.getInstance(HMAC_ALGORITHM);
+            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM);
+            mac.init(secretKeySpec);
+            
+            byte[] rawHmac = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(rawHmac);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to sign cloudfront cookie", e);
         }
-    }
-
-    private String normalizePem(String pem) {
-        return pem.replace("\\n", "\n").trim();
     }
 
     private ResponseCookie createCookie(String name, String value) {
@@ -127,5 +94,4 @@ public class CloudFrontSignedCookieService {
 
         return builder.build();
     }
-
 }
