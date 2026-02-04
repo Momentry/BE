@@ -2,7 +2,6 @@ package com.momentry.BE.domain.album.controller;
 
 import java.util.List;
 
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -156,8 +155,7 @@ public class AlbumController {
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") int size) {
         FilePageResult result = albumService.getFiles(albumId, tagId, cursor, size, SecurityUtil.getCurrentUserId());
-        HttpHeaders headers = cloudFrontSignedCookieService.buildSignedCookieHeaders(albumId);
-        return ApiResponse.ofSuccess(headers, result);
+        return ApiResponse.ofSuccess(result);
     }
 
     @PostMapping("/{albumId}/members")

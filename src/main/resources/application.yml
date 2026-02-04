@@ -52,9 +52,7 @@ oauth:
 
 cloudfront:
   enabled: ${CF_ENABLED:false}
-  key-pair-id: ${CF_KEY_PAIR_ID:}
-  private-key: ${CF_PRIVATE_KEY:}
-  resource-url: ${CF_RESOURCE_URL:}
+  secret-key: ${CF_SECRET_KEY:}
   cookie-domain: ${CF_COOKIE_DOMAIN:}
   cookie-path: ${CF_COOKIE_PATH:/}
   cookie-ttl-seconds: ${CF_COOKIE_TTL:3600}
