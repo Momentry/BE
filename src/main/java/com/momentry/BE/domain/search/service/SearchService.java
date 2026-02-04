@@ -2,13 +2,14 @@ package com.momentry.BE.domain.search.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
-
-import com.momentry.BE.domain.album.dto.AlbumMemberProfileResult;
+import com.momentry.BE.domain.album.dto.AlbumCountDto;
+import com.momentry.BE.domain.album.dto.AlbumUrlDto;
 import com.momentry.BE.domain.album.dto.AlbumTagDetailResult;
 import com.momentry.BE.domain.album.entity.Album;
-import com.momentry.BE.domain.album.entity.AlbumMember;
 import com.momentry.BE.domain.album.entity.AlbumTag;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
 import com.momentry.BE.domain.album.repository.AlbumTagRepository;
@@ -23,6 +24,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class SearchService {
+
+    private static final int ALBUM_MEMBER_PROFILE_LIMIT = 12; // 앨범 멤버 프로필 최대 12명
 
     private final AlbumTagRepository albumTagRepository;
     private final UserRepository userRepository;
@@ -86,37 +89,47 @@ public class SearchService {
         List<Album> albums;
 
         if (keyword == null || keyword.isBlank()) {
-            // 키워드가 없으면 전체 앨범 조회
             albums = albumRepository.findAll();
         } else {
-            // 키워드로 검색
             albums = albumRepository.findByNameContainingIgnoreCase(keyword);
         }
 
+        if (albums.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> albumIds = albums.stream().map(Album::getId).toList();
+
+        Map<Long, Integer> memberCountMap = albumMemberRepository.countMembersByAlbumIds(albumIds)
+                .stream().collect(Collectors.toMap(
+                        AlbumCountDto::getAlbumId,
+                        AlbumCountDto::getCount));
+
+        Map<Long, List<String>> memberProfileMap = albumMemberRepository
+                .findMemberProfilesByAlbumIds(albumIds)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        AlbumUrlDto::getAlbumId,
+                        Collectors.mapping(AlbumUrlDto::getUrl, Collectors.toList())));
+
         return albums.stream()
-                .map(album -> {
-                    // 멤버 조회 (username 가나다순, 최대 12명)
-                    List<AlbumMember> members = albumMemberRepository.findByAlbumIdWithUser(album.getId());
-                    int memberCount = members.size();
-
-                    // 멤버 프로필 리스트 (username 가나다순, 최대 12명)
-                    List<AlbumMemberProfileResult> memberProfiles = members.stream()
-                            .sorted((m1, m2) -> m1.getUser().getUsername()
-                                    .compareToIgnoreCase(m2.getUser().getUsername())) // username 가나다순
-                            .limit(12)
-                            .map(member -> new AlbumMemberProfileResult(
-                                    member.getUser().getId(),
-                                    member.getUser().getProfileImageUrl()))
-                            .toList();
-
-                    return new AlbumSearchResponse(
-                            album.getId(),
-                            album.getName(),
-                            album.getCoverImageUrl(),
-                            album.getCreatedAt(),
-                            memberCount,
-                            memberProfiles);
-                })
+                .map(album -> toAlbumSearchResponse(
+                        album,
+                        memberCountMap.getOrDefault(album.getId(), 0),
+                        memberProfileMap.getOrDefault(album.getId(), List.of())))
                 .toList();
+    }
+
+    private AlbumSearchResponse toAlbumSearchResponse(Album album, int memberCount, List<String> profileUrls) {
+        List<String> memberProfileUrls = profileUrls.stream()
+                .limit(ALBUM_MEMBER_PROFILE_LIMIT)
+                .toList();
+        return new AlbumSearchResponse(
+                album.getId(),
+                album.getName(),
+                album.getCoverImageUrl(),
+                album.getCreatedAt(),
+                memberCount,
+                memberProfileUrls);
     }
 }

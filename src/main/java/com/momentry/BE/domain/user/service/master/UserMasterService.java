@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -45,33 +44,33 @@ public class UserMasterService {
     private final UserService userService;
     private final AlertPreferenceService alertPreferenceService;
     private final AlbumService albumService;
-    
+
     // TODO : 나중에 서비스 레이어가 나오면 교체하기
     private final AlbumMemberRepository albumMemberRepository;
     private final FileRepository fileRepository;
     private final FileLikeRepository fileLikeRepository;
 
     @Transactional
-    public UserUpdateResponse updateUser(Long userId, MultipartFile file, String newUsername){
+    public UserUpdateResponse updateUser(Long userId, MultipartFile file, String newUsername) {
         return userService.update(userId, file, newUsername);
     }
 
     // SOFT DELETE
     // TODO : 30일 이후에 관련 엔티티 삭제 로직 추가
-    public void signOut(Long userId){
+    public void signOut(Long userId) {
         User currentUser = userService.getCurrentUser(userId);
 
         userService.withdrawUser(currentUser);
     }
 
     @Transactional
-    public void updateAlertPreference(LoginResponse.AlertDto request, Long userId){
+    public void updateAlertPreference(LoginResponse.AlertDto request, Long userId) {
         User user = userService.getCurrentUser(userId);
         alertPreferenceService.updateAlertPreference(request, user);
     }
 
     @Transactional(readOnly = true)
-    public GetCurrentUserAlbumListResponse getCurrentUserAlbums(Long userId){
+    public GetCurrentUserAlbumListResponse getCurrentUserAlbums(Long userId) {
         User user = userService.getCurrentUser(userId);
 
         // 사용자가 속한 앨범 list 가져오기
@@ -94,25 +93,26 @@ public class UserMasterService {
                         AlbumCountDto::getAlbumId,
                         AlbumCountDto::getCount));
 
-        // 각 앨범의 file.thumbUrl을 최신순으로 앨범 별로 가져오기
-        Map<Long, List<String>> memberProfileImageMap = albumMemberRepository.findMemberProfilesByAlbumIds(albumIds, Limit.of(6))
+        // 각 앨범의 멤버 프로필 이미지 URL (앨범당 최대 6명, username 순)
+        Map<Long, List<String>> memberProfileImageMap = albumMemberRepository.findMemberProfilesByAlbumIds(albumIds)
                 .stream()
                 .collect(Collectors.groupingBy(
-                        AlbumUrlDto::getAlbumId, // 그룹화 기준 (Key)
-                        Collectors.mapping(AlbumUrlDto::getUrl, Collectors.toList()) // 벨류 변환 및 리스트 수집 (Value)
-                ));
-        
+                        AlbumUrlDto::getAlbumId,
+                        Collectors.mapping(AlbumUrlDto::getUrl, Collectors.toList())));
+
         // 앨범 별로 albumHeaderDto를 생성해서 list를 만듬
         List<AlbumHeaderDto> albumHeaders = albums.stream().map(album -> {
             Long albumId = album.getId();
-
+            List<String> profiles = memberProfileImageMap.getOrDefault(albumId, List.of()).stream()
+                    .limit(6)
+                    .toList();
             return AlbumHeaderDto.builder()
                     .albumId(albumId)
                     .albumName(album.getName())
                     .thumbnailUrl(album.getCoverImageUrl())
                     .memberCount(memberCountMap.getOrDefault(albumId, 0))
                     .fileCount(fileCountMap.getOrDefault(albumId, 0))
-                    .memberProfiles(memberProfileImageMap.get(albumId))
+                    .memberProfiles(profiles)
                     .createdAt(album.getCreatedAt().toLocalDate())
                     .build();
         }).toList();
@@ -130,7 +130,8 @@ public class UserMasterService {
         // 사용자의 좋아요 목록에 있는 파일 리스트를 좋아요의 최신순으로 가져오기
         List<File> likedFiles = (decodedCursor == null)
                 ? fileLikeRepository.findLikedFileByUserId(user.getId(), pageable)
-                : fileLikeRepository.findLikedFileByUserIdWithCursor(user.getId(), decodedCursor.getCreatedAt(), decodedCursor.getId(), pageable);
+                : fileLikeRepository.findLikedFileByUserIdWithCursor(user.getId(), decodedCursor.getCreatedAt(),
+                        decodedCursor.getId(), pageable);
 
         boolean hasNext = likedFiles.size() > pageSize;
 
@@ -170,7 +171,8 @@ public class UserMasterService {
 
         List<File> files = (decodedCursor == null)
                 ? fileRepository.findByAlbumIdsOrderByCreatedAtDescIdDesc(albumIds, pageable)
-                : fileRepository.findByAlbumIdsWithCursor(albumIds, decodedCursor.getCreatedAt(), decodedCursor.getId(), pageable);
+                : fileRepository.findByAlbumIdsWithCursor(albumIds, decodedCursor.getCreatedAt(), decodedCursor.getId(),
+                        pageable);
 
         boolean hasNext = files.size() > pageSize;
         if (hasNext) {
