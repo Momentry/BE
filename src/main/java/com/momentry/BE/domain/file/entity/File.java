@@ -88,8 +88,10 @@ public class File {
         }
     }
 
-    public void updatePostProcessingResults(String thumbUrl, String displayUrl) {
+    public void updatePostProcessingResults(String thumbUrl, String displayUrl, String metadata, LocalDateTime createdAt) {
         this.thumbUrl = thumbUrl;
         this.displayUrl = displayUrl;
+        this.metadata = metadata;
+        this.createdAt = createdAt;
     }
 }

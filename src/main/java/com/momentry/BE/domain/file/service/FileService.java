@@ -229,14 +229,17 @@ public class FileService {
 
     // SQS 메시지 수신 시 해당 파일의 thumbnail, display path를 업데이트
     @Transactional
-    public void updateThumbDisplayPathOfFile(String fileKey, String thumbnailPath, String displayPath) {
+    public void updateThumbDisplayPathOfFile(String fileKey, String thumbnailPath, String displayPath, String metadata, String createdAt) {
         File file = fileRepository.findByFileKey(fileKey)
                 .orElseThrow(FileNotFoundException::new);
 
         // 리사이징된 경로 업데이트
         file.updatePostProcessingResults(
                 CLOUDFRONT_URL_PREFIX + thumbnailPath,
-                CLOUDFRONT_URL_PREFIX + displayPath);
+                CLOUDFRONT_URL_PREFIX + displayPath,
+                metadata,
+                createdAt==null ? LocalDateTime.now() : LocalDateTime.parse(createdAt)
+        );
 
         log.info("파일 정보 업데이트 완료: ID={}", file.getId());
     }

@@ -20,14 +20,17 @@ public class MediaResultListener {
                                                                                                   // 정의된 큐 이름
     @Transactional
     public void receiveMessage(MediaProcessingResultDto message) {
-        log.info("SQS 메시지 수신: fileId={}, status={}", message.getFileKey(), message.getStatus());
+        log.info("SQS 메시지 수신: fileKey={}, status={}, createdAt={}, fullMessage={}", message.getFileKey(), message.getStatus(), message.getCreatedAt(), message);
 
         if ("SUCCESS".equals(message.getStatus())) {
             // 파일 path 업데이트 메서드 호출
             fileService.updateThumbDisplayPathOfFile(
                     message.getFileKey(),
                     message.getThumbnailPath(),
-                    message.getDisplayPath());
+                    message.getDisplayPath(),
+                    message.getMetadata(),
+                    message.getCreatedAt()
+            );
         } else {
             log.error("미디어 처리 실패 메시지 수신: fileId={}", message.getFileKey());
         }
