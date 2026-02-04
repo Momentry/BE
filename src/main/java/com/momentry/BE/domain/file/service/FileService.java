@@ -219,9 +219,8 @@ public class FileService {
         // 태그 목록 조회
         List<Long> tags = fileTagInfoRepository.findTagIdsByFileId(targetFileId);
 
-        // 업로더의 프로필 이미지 접근용 presigned url 발급
-        String uploaderProfileImageUrl = s3Util.generatePresignedUrl(targetFile.getUploader().getProfileImageUrl());
-        // TODO: 이 값이 null이면 기본 이미지 url 넣어줘야함!
+        // 업로더의 프로필 이미지 접근용 url 제공
+        String uploaderProfileImageUrl = targetFile.getUploader().getProfileImageUrl();
 
         // DTO로 변환 후 반환
         return GetFileDetailResponseDto.of(targetFile, tags, isLiked, uploaderProfileImageUrl);
