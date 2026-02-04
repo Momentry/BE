@@ -1,23 +1,20 @@
 package com.momentry.BE.domain.search.controller;
 
-import java.util.List;
-
-import jakarta.validation.constraints.NotBlank;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.momentry.BE.domain.user.dto.UserSearchResult;
-import com.momentry.BE.domain.album.dto.AlbumTagDetailResult;
-import com.momentry.BE.domain.search.dto.AlbumSearchResponse;
+import com.momentry.BE.domain.search.dto.SearchAlbumsResponse;
+import com.momentry.BE.domain.search.dto.SearchTagsResponse;
+import com.momentry.BE.domain.search.dto.SearchUsersResponse;
 import com.momentry.BE.domain.search.service.SearchService;
 import com.momentry.BE.global.dto.ApiResponse;
+import com.momentry.BE.security.util.SecurityUtil;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -29,15 +26,21 @@ public class SearchController {
     private final SearchService searchService;
 
     @GetMapping("/tags")
-    public ResponseEntity<ApiResponse<List<AlbumTagDetailResult>>> searchTags(@RequestParam String tagName) {
-        List<AlbumTagDetailResult> tags = searchService.searchByTagName(tagName);
+    public ResponseEntity<ApiResponse<SearchTagsResponse>> searchTags(
+            @RequestParam String tagName,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        SearchTagsResponse tags = searchService.searchByTagName(tagName, userId, cursor, size);
         return ApiResponse.ofSuccess(tags);
     }
 
     @GetMapping("/users")
-    public ResponseEntity<ApiResponse<List<UserSearchResult>>> searchUsers(
-            @RequestParam @NotBlank(message = "검색 키워드는 필수 값입니다.") String keyword) {
-        List<UserSearchResult> users = searchService.searchUsersByKeyword(keyword);
+    public ResponseEntity<ApiResponse<SearchUsersResponse>> searchUsers(
+            @RequestParam @NotBlank(message = "검색 키워드는 필수 값입니다.") String keyword,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        SearchUsersResponse users = searchService.searchUsersByKeyword(keyword, cursor, size);
         return ApiResponse.ofSuccess(users);
     }
 
@@ -48,9 +51,12 @@ public class SearchController {
      * @return 앨범 검색 결과
      */
     @GetMapping("/albums")
-    public ResponseEntity<ApiResponse<List<AlbumSearchResponse>>> searchAlbums(
-            @RequestParam(required = false) String keyword) {
-        List<AlbumSearchResponse> albums = searchService.searchAlbums(keyword);
-        return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 검색 조회 성공", albums);
+    public ResponseEntity<ApiResponse<SearchAlbumsResponse>> searchAlbums(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        SearchAlbumsResponse albums = searchService.searchAlbums(userId, keyword, cursor, size);
+        return ApiResponse.ofSuccess(albums);
     }
 }

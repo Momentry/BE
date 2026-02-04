@@ -1,13 +1,17 @@
 package com.momentry.BE.domain.album.repository;
 
-import com.momentry.BE.domain.album.entity.Album;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.momentry.BE.domain.album.entity.Album;
+
 
 @Repository
 public interface AlbumRepository extends JpaRepository<Album, Long> {
@@ -33,4 +37,59 @@ public interface AlbumRepository extends JpaRepository<Album, Long> {
      */
     @Query("SELECT a FROM Album a WHERE LOWER(a.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Album> findByNameContainingIgnoreCase(@Param("keyword") String keyword);
+
+    @Query("""
+        SELECT a
+        FROM Album a
+        JOIN AlbumMember am ON am.album = a
+        WHERE am.user.id = :userId
+        ORDER BY a.createdAt DESC, a.id DESC
+    """)
+    List<Album> findAccessibleAlbums(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("""
+        SELECT a
+        FROM Album a
+        JOIN AlbumMember am ON am.album = a
+        WHERE am.user.id = :userId
+          AND (
+                a.createdAt < :createdAt
+             OR (a.createdAt = :createdAt AND a.id < :albumId)
+          )
+        ORDER BY a.createdAt DESC, a.id DESC
+    """)
+    List<Album> findAccessibleAlbumsWithCursor(@Param("userId") Long userId,
+                                               @Param("createdAt") LocalDateTime createdAt,
+                                               @Param("albumId") Long albumId,
+                                               Pageable pageable);
+
+    @Query("""
+        SELECT a
+        FROM Album a
+        JOIN AlbumMember am ON am.album = a
+        WHERE am.user.id = :userId
+          AND LOWER(a.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        ORDER BY a.createdAt DESC, a.id DESC
+    """)
+    List<Album> findAccessibleAlbumsByKeyword(@Param("userId") Long userId,
+                                              @Param("keyword") String keyword,
+                                              Pageable pageable);
+
+    @Query("""
+        SELECT a
+        FROM Album a
+        JOIN AlbumMember am ON am.album = a
+        WHERE am.user.id = :userId
+          AND LOWER(a.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+          AND (
+                a.createdAt < :createdAt
+             OR (a.createdAt = :createdAt AND a.id < :albumId)
+          )
+        ORDER BY a.createdAt DESC, a.id DESC
+    """)
+    List<Album> findAccessibleAlbumsByKeywordWithCursor(@Param("userId") Long userId,
+                                                        @Param("keyword") String keyword,
+                                                        @Param("createdAt") LocalDateTime createdAt,
+                                                        @Param("albumId") Long albumId,
+                                                        Pageable pageable);
 }
