@@ -59,6 +59,7 @@ cloudfront:
   secure: ${CF_COOKIE_SECURE:true}
   http-only: ${CF_COOKIE_HTTP_ONLY:true}
   same-site: ${CF_COOKIE_SAME_SITE:None}
+  url-prefix: ${CF_URL_PREFIX:https://d13zj90l4l6v74.cloudfront.net/album/}
 
 aws:
   sqs:
