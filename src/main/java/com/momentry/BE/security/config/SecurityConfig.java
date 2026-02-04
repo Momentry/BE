@@ -27,7 +27,7 @@ public class SecurityConfig {
     private final AccessDeniedHandler accessDeniedHandler;
 
     private static final String[] PERMIT_ALL_PATHS = {
-            "/auth/social"
+            "/api/auth/social"
     };
 
     @Bean
