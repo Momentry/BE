@@ -1,7 +1,9 @@
 package com.momentry.BE.domain.file.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import com.momentry.BE.global.util.S3Util;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 @Service
 @Slf4j
@@ -36,6 +39,23 @@ public class FileService {
 
     @Value("${cloudfront.url-prefix}")
     private String CLOUDFRONT_URL_PREFIX;
+
+    @Transactional
+    public List<String> getFileUploadUrls(Long uploaderId, Long albumId, Integer fileNum){
+        // 유저 권한 체크
+        albumPermissionService.checkPermission(uploaderId, albumId, MemberAlbumPermission.EDITOR);
+
+        List<String> uploadUrlList = new ArrayList<>();
+        for(int idx = 0; idx < fileNum; idx++){
+            // 각 파일에 uuid 부여
+            String fileId = UUID.randomUUID().toString();
+            uploadUrlList.add(
+                    s3Util.generatePresignedUploadUrl("original/" + albumId + "/" + fileId)
+            );
+        }
+
+        return uploadUrlList;
+    }
 
     @Transactional
     public void deleteFiles(Long userId, Long albumId, List<Long> targetFileIds) {

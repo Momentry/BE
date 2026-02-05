@@ -13,9 +13,9 @@ public class UploadFileDto {
     private Long albumId;
     private MultipartFile file;
     private String metadata;
-    private LocalDateTime createdAt;
+    private LocalDateTime capturedAt;
 
-    public static UploadFileDto of(Long uploaderId, Long albumId, MultipartFile file, String metadata, LocalDateTime createdAt){
-        return new UploadFileDto(uploaderId, albumId, file, metadata, createdAt);
+    public static UploadFileDto of(Long uploaderId, Long albumId, MultipartFile file, String metadata, LocalDateTime capturedAt){
+        return new UploadFileDto(uploaderId, albumId, file, metadata, capturedAt);
     }
 }

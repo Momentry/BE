@@ -85,9 +85,12 @@ public class FileUploadService {
                     albumId,
                     fileType,
                     uploadFileDto.getMetadata(),
-                    uploadFileDto.getCreatedAt(),
+                    uploadFileDto.getCapturedAt(),
                     originalFilePath,
-                    fileId);
+                    null,
+                    null,
+                    fileId
+            );
 
             // 업로드 결과 반환
             return FileResult.of(uploadedFile);
@@ -122,16 +125,18 @@ public class FileUploadService {
         // 썸네일 추출 + 압축 -> Lambda에서 수행
     }
 
-
-    // ========== 내부 private 메서드 ==========
-    private File saveFileInfo(
+    @Transactional
+    public File saveFileInfo(
             Long uploaderId,
             Long albumId,
             FileType fileType,
             String metadata,
-            LocalDateTime createdAt,
+            LocalDateTime capturedAt,
             String originUrl,
-            String fileKey) {
+            String thumbUrl,
+            String displayUrl,
+            String fileKey
+    ) {
         // 유저, 앨범 프록시 객체 생성
         User uploader = userRepository.getReferenceById(uploaderId);
         Album album = albumRepository.getReferenceById(albumId);
@@ -141,10 +146,12 @@ public class FileUploadService {
                 .uploader(uploader)
                 .album(album)
                 .originUrl(originUrl)
+                .thumbUrl(thumbUrl)
+                .displayUrl(displayUrl)
                 .fileType(fileType)
                 .metadata(metadata)
-                .createdAt(createdAt)
                 .fileKey(fileKey)
+                .capturedAt(capturedAt)
                 .build();
 
         // DB에 저장
@@ -155,6 +162,8 @@ public class FileUploadService {
     }
 
 
+
+    // ========== 내부 private 메서드 ==========
     private String extractExtension(String fileName) {
         // 파일 이름이 null이면 확장자는 빈 문자열로 반환
         if (fileName == null)

@@ -50,9 +50,12 @@ public class File {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = true)
+    private LocalDateTime capturedAt;
+
     @Builder
     public File(Album album, String fileKey, String originUrl, String thumbUrl, String displayUrl,
-                String metadata, FileType fileType, User uploader, LocalDateTime createdAt) {
+                String metadata, FileType fileType, User uploader, LocalDateTime capturedAt) {
         // 유효성 체크: 필수 값이 없으면 객체 생성 자체를 막음
         Assert.notNull(album, "앨범은 필수 값입니다.");
         Assert.hasText(fileKey, "파일 키는 필수 값입니다.");
@@ -68,8 +71,9 @@ public class File {
         this.metadata = metadata;
         this.fileType = fileType;
         this.uploader = uploader;
-        this.createdAt = (createdAt==null) ? LocalDateTime.now() : createdAt;
+        this.capturedAt = capturedAt;
 
+        this.createdAt = LocalDateTime.now();
         this.likesCount = 0L; // 기본값은 0
     }
 

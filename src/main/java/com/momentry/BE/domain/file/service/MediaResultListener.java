@@ -1,5 +1,6 @@
 package com.momentry.BE.domain.file.service;
 
+import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,27 +10,39 @@ import io.awspring.cloud.sqs.annotation.SqsListener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MediaResultListener {
 
-    private final FileService fileService;
+    private final FileUploadService fileUploadService;
 
     @SqsListener(value = "${aws.sqs.queue-name}", factory = "defaultSqsListenerContainerFactory") // application.yml에
                                                                                                   // 정의된 큐 이름
     @Transactional
     public void receiveMessage(MediaProcessingResultDto message) {
-        log.info("SQS 메시지 수신: fileKey={}, status={}, createdAt={}, fullMessage={}", message.getFileKey(), message.getStatus(), message.getCreatedAt(), message);
+        log.info("SQS 메시지 수신: fileKey={}, status={}, capturedAt={}, fullMessage={}", message.getFileKey(), message.getStatus(), message.getCapturedAt(), message);
 
         if ("SUCCESS".equals(message.getStatus())) {
-            // 파일 path 업데이트 메서드 호출
-            fileService.updateThumbDisplayPathOfFile(
-                    message.getFileKey(),
+            // capturedAt null 체크
+            LocalDateTime capturedAt = LocalDateTime.now();
+            if(message.getCapturedAt() != null && !message.getCapturedAt().isEmpty()){
+                capturedAt = LocalDateTime.parse(message.getCapturedAt());
+            }
+
+            // 파일 정보 저장 메서드 호출
+            fileUploadService.saveFileInfo(
+                    message.getUploaderId(),
+                    message.getAlbumId(),
+                    message.getFileType(),
+                    message.getMetadata(),
+                    capturedAt,
+                    message.getOriginalPath(),
                     message.getThumbnailPath(),
                     message.getDisplayPath(),
-                    message.getMetadata(),
-                    message.getCreatedAt()
+                    message.getFileKey()
             );
         } else {
             log.error("미디어 처리 실패 메시지 수신: fileId={}", message.getFileKey());
