@@ -41,6 +41,9 @@ public class FileService {
     @Value("${cloudfront.url-prefix}")
     private String CLOUDFRONT_URL_PREFIX;
 
+    @Value("${app.s3.upload-prefix:original/}")
+    private String FILEKEY_PREFIX;
+
     @Transactional
     public FileUploadResponseDto getFileUploadUrls(Long uploaderId, Long albumId, FileUploadRequestDto getFileUploadUrlsRequestDtoList){
         // 유저 권한 체크
@@ -55,7 +58,7 @@ public class FileService {
             String extension = fileUtil.getExtension(fileInfo.getContentType());
 
             // fileKey 생성 ( original/{albumId}/{uuid}.{extension}
-            String fileKey = "original/" + albumId + "/" + fileId + extension;
+            String fileKey = FILEKEY_PREFIX + albumId + "/" + fileId + extension;
 
             // upload용 presigned url 생성
             String uploadUrl = s3Util.generatePresignedUploadUrl(uploaderId, fileKey, fileInfo.getContentType());
