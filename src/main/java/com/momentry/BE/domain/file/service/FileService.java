@@ -241,6 +241,15 @@ public class FileService {
         log.info("파일 정보 업데이트 완료: ID={}", file.getId());
     }
 
+//    @Transactional
+//    public String getUploadUrl(Long userId, Long albumId, String fileName) {
+//        // 경로 설계: original/{albumId}/{UUID}_{fileName}
+//        String fileKey = String.format("original/%d/%d/%s_%s",
+//                userId, albumId, UUID.randomUUID(), fileName);
+//
+//        return s3Util.generatePresignedUploadUrl(fileKey);
+//    }
+
     // ========== 내부 사용 메서드 ==========
     private File saveFileInfo(
             Long uploaderId,
