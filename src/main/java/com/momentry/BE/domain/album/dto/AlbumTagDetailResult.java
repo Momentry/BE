@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AlbumTagDetailResult {
-    
+
     private Long id;
     private String tagName;
     private Long count;

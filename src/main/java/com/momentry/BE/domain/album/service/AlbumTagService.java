@@ -1,14 +1,15 @@
 package com.momentry.BE.domain.album.service;
 
-import com.momentry.BE.domain.album.entity.AlbumTag;
-import com.momentry.BE.domain.album.exception.InvalidTagException;
-import com.momentry.BE.domain.album.repository.AlbumTagRepository;
-import com.momentry.BE.global.exception.BusinessException;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import com.momentry.BE.domain.album.entity.AlbumTag;
+import com.momentry.BE.domain.album.exception.InvalidTagException;
+import com.momentry.BE.domain.album.repository.AlbumTagRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -17,7 +18,7 @@ public class AlbumTagService {
     private final AlbumTagRepository albumTagRepository;
 
     @Transactional
-    public void checkTagsInAlbum(List<Long> tagIdList, Long albumId){
+    public void checkTagsInAlbum(List<Long> tagIdList, Long albumId) {
         List<AlbumTag> validTags = albumTagRepository.findAllById(tagIdList);
 
         // 요청한 태그 개수와 DB에서 찾은 태그 개수가 같은지 확인 (존재 하지 않는 ID 방지)

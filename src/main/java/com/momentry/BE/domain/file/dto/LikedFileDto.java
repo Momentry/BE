@@ -1,15 +1,15 @@
 package com.momentry.BE.domain.file.dto;
 
+import java.time.LocalDate;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.momentry.BE.domain.file.entity.File;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
-import java.util.List;
 
 @Getter
 @Builder
@@ -29,7 +29,7 @@ public class LikedFileDto {
     private Long albumId;
     private String albumName;
 
-    public LikedFileDto(File file){
+    public LikedFileDto(File file) {
         this.fileId = file.getId();
         this.thumbnailUrl = file.getThumbUrl();
         this.displayUrl = file.getDisplayUrl();

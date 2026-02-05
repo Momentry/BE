@@ -28,7 +28,6 @@ import com.momentry.BE.domain.album.dto.TagUpdateRequest;
 import com.momentry.BE.domain.album.service.AlbumService;
 import com.momentry.BE.domain.file.dto.FilePageResult;
 import com.momentry.BE.global.dto.ApiResponse;
-import com.momentry.BE.global.service.CloudFrontSignedCookieService;
 import com.momentry.BE.security.util.SecurityUtil;
 
 import jakarta.validation.Valid;
@@ -42,13 +41,12 @@ import lombok.RequiredArgsConstructor;
 public class AlbumController {
 
     private final AlbumService albumService;
-    private final CloudFrontSignedCookieService cloudFrontSignedCookieService;
 
     /**
      * 앨범 생성
      * 
      * @param request 앨범 생성 요청 (albumName, albumCoverImage)
-     * @param userId 인증 사용자 ID
+     * @param userId  인증 사용자 ID
      * @return 앨범 생성 응답 (albumId, albumName)
      */
     @PostMapping
@@ -80,7 +78,7 @@ public class AlbumController {
      * 
      * @param albumId 앨범 ID
      * @param request 앨범 수정 요청 (albumName, albumCoverImage) - 선택적
-     * @param userId 인증 사용자 ID
+     * @param userId  인증 사용자 ID
      * @return 앨범 수정 응답
      */
     @PostMapping("/{albumId}")
@@ -162,7 +160,8 @@ public class AlbumController {
     public ResponseEntity<ApiResponse<AlbumMemberInviteResult>> inviteMembers(
             @PathVariable @NotNull Long albumId,
             @Valid @RequestBody AlbumMemberInviteRequest request) {
-        AlbumMemberInviteResult result = albumService.inviteMembers(albumId, request.getUserIds(), SecurityUtil.getCurrentUserId());
+        AlbumMemberInviteResult result = albumService.inviteMembers(albumId, request.getUserIds(),
+                SecurityUtil.getCurrentUserId());
         return ApiResponse.ofSuccess(HttpStatus.CREATED, result);
     }
 
@@ -171,7 +170,8 @@ public class AlbumController {
             @PathVariable Long albumId,
             @PathVariable Long memberId,
             @RequestBody AlbumMemberPermissionUpdateRequest request) {
-        albumService.updateMemberPermission(albumId, memberId, request.getPermission(), SecurityUtil.getCurrentUserId());
+        albumService.updateMemberPermission(albumId, memberId, request.getPermission(),
+                SecurityUtil.getCurrentUserId());
         return ApiResponse.ofSuccess();
     }
 
