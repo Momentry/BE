@@ -41,7 +41,7 @@ public class FileService {
     private String CLOUDFRONT_URL_PREFIX;
 
     @Transactional
-    public List<String> getFileUploadUrls(Long uploaderId, Long albumId, Integer fileNum){
+    public List<String> getFileUploadUrls(Long uploaderId, Long albumId, Long fileNum){
         // 유저 권한 체크
         albumPermissionService.checkPermission(uploaderId, albumId, MemberAlbumPermission.EDITOR);
 

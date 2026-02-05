@@ -22,6 +22,16 @@ public class FileController {
     private final FileService fileService;
     private final FileUploadService fileUploadService;
 
+    @GetMapping(value = "/{albumId}/upload-url")
+    public ResponseEntity<ApiResponse<List<String>>> getUploadUrls(
+            @PathVariable Long albumId,
+            @RequestParam("fileNum") Long fileNum
+    ){
+        // 업로드할 파일 개수를 전달
+        List<String> uploadUrlList = fileService.getFileUploadUrls(SecurityUtil.getCurrentUserId(), albumId, fileNum);
+        return ApiResponse.ofSuccess(HttpStatus.OK, "파일 업로드용 url 생성", uploadUrlList);
+    }
+
     @PutMapping(value = "/{albumId}")
     public ResponseEntity<ApiResponse<List<FileResult>>> uploadFiles(
             @PathVariable Long albumId,
