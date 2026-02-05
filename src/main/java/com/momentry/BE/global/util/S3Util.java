@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.Map;
 
 import static org.springframework.util.StringUtils.hasText;
 
@@ -82,13 +83,15 @@ public class S3Util {
         return presignedRequest.url().toString();
     }
 
-    public String generatePresignedUploadUrl(String fileKey) {
+    public String generatePresignedUploadUrl(Long uploaderId, String fileKey, String contentType) {
         if (!hasText(fileKey)) return null;
 
         // 업로드될 파일의 위치와 설정 정의
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(fileKey)
+                .contentType(contentType)
+                .metadata(Map.of("uploaderid", String.valueOf(uploaderId)))
                 .build();
 
         // Presigned URL 발급 옵션 설정

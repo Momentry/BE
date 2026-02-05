@@ -5,13 +5,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.momentry.BE.domain.file.dto.*;
+import com.momentry.BE.domain.file.util.FileUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.momentry.BE.domain.album.entity.MemberAlbumPermission;
 import com.momentry.BE.domain.album.service.AlbumPermissionService;
-import com.momentry.BE.domain.file.dto.GetFileDetailResponseDto;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileLike;
 import com.momentry.BE.domain.file.exception.AlreadyLikedException;
@@ -24,13 +25,13 @@ import com.momentry.BE.global.util.S3Util;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class FileService {
     private final S3Util s3Util;
+    private final FileUtil fileUtil;
     private final AlbumPermissionService albumPermissionService;
     private final FileRepository fileRepository;
     private final FileLikeRepository fileLikeRepository;
@@ -41,20 +42,33 @@ public class FileService {
     private String CLOUDFRONT_URL_PREFIX;
 
     @Transactional
-    public List<String> getFileUploadUrls(Long uploaderId, Long albumId, Long fileNum){
+    public FileUploadResponseDto getFileUploadUrls(Long uploaderId, Long albumId, FileUploadRequestDto getFileUploadUrlsRequestDtoList){
         // 유저 권한 체크
         albumPermissionService.checkPermission(uploaderId, albumId, MemberAlbumPermission.EDITOR);
 
-        List<String> uploadUrlList = new ArrayList<>();
-        for(int idx = 0; idx < fileNum; idx++){
+        List<UploadUrlResponseDto> uploadUrlList = new ArrayList<>();
+        for(UploadFileInfoDto fileInfo : getFileUploadUrlsRequestDtoList.getUploadFileInfoList()){
             // 각 파일에 uuid 부여
             String fileId = UUID.randomUUID().toString();
+
+            // 확장자 추출
+            String extension = fileUtil.getExtension(fileInfo.getContentType());
+
+            // fileKey 생성 ( original/{albumId}/{uuid}.{extension}
+            String fileKey = "original/" + albumId + "/" + fileId + extension;
+
+            // upload용 presigned url 생성
+            String uploadUrl = s3Util.generatePresignedUploadUrl(uploaderId, fileKey, fileInfo.getContentType());
+
             uploadUrlList.add(
-                    s3Util.generatePresignedUploadUrl("original/" + albumId + "/" + fileId)
+                    UploadUrlResponseDto.builder()
+                            .fileNo(fileInfo.getFileNo())
+                            .uploadUrl(uploadUrl)
+                            .build()
             );
         }
 
-        return uploadUrlList;
+        return FileUploadResponseDto.of(uploadUrlList);
     }
 
     @Transactional

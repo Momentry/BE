@@ -1,7 +1,6 @@
 package com.momentry.BE.domain.file.controller;
 
-import com.momentry.BE.domain.file.dto.FileResult;
-import com.momentry.BE.domain.file.dto.GetFileDetailResponseDto;
+import com.momentry.BE.domain.file.dto.*;
 import com.momentry.BE.domain.file.service.FileService;
 import com.momentry.BE.domain.file.service.FileUploadService;
 import com.momentry.BE.global.dto.ApiResponse;
@@ -23,12 +22,12 @@ public class FileController {
     private final FileUploadService fileUploadService;
 
     @GetMapping(value = "/{albumId}/upload-url")
-    public ResponseEntity<ApiResponse<List<String>>> getUploadUrls(
+    public ResponseEntity<ApiResponse<FileUploadResponseDto>> getUploadUrls(
             @PathVariable Long albumId,
-            @RequestParam("fileNum") Long fileNum
+            @RequestBody FileUploadRequestDto fileList
     ){
         // 업로드할 파일 개수를 전달
-        List<String> uploadUrlList = fileService.getFileUploadUrls(SecurityUtil.getCurrentUserId(), albumId, fileNum);
+        FileUploadResponseDto uploadUrlList = fileService.getFileUploadUrls(SecurityUtil.getCurrentUserId(), albumId, fileList);
         return ApiResponse.ofSuccess(HttpStatus.OK, "파일 업로드용 url 생성", uploadUrlList);
     }
 
