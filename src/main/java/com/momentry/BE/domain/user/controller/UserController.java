@@ -2,7 +2,15 @@ package com.momentry.BE.domain.user.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.momentry.BE.domain.user.dto.GetCurrentUserAlbumListResponse;
@@ -52,7 +60,6 @@ public class UserController {
         return ApiResponse.ofSuccess(request);
     }
 
-    // TODO : 이것도 페이지네이션 필요함???
     @GetMapping("/{userId}/albums")
     public ResponseEntity<ApiResponse<GetCurrentUserAlbumListResponse>> getCurrentUserAlbumList(
             @PathVariable Long userId) {
@@ -81,7 +88,7 @@ public class UserController {
 
         return ApiResponse.ofSuccess(response);
     }
-    
+
     private void validateSelf(Long userId) {
         Long currentUserId = SecurityUtil.getCurrentUserId();
         if (!userId.equals(currentUserId)) {
