@@ -5,6 +5,7 @@ import com.momentry.BE.domain.album.entity.MemberAlbumPermission;
 import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.service.AlbumPermissionService;
 import com.momentry.BE.domain.file.dto.FileResult;
+import com.momentry.BE.domain.file.dto.SaveFileDto;
 import com.momentry.BE.domain.file.dto.UploadFileDto;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileType;
@@ -81,15 +82,15 @@ public class FileUploadService {
 
             // DB에 파일 정보 저장
             File uploadedFile = saveFileInfo(
-                    uploadFileDto.getUploaderId(),
-                    albumId,
-                    fileType,
-                    uploadFileDto.getMetadata(),
-                    uploadFileDto.getCapturedAt(),
-                    originalFilePath,
-                    null,
-                    null,
-                    fileId
+                    SaveFileDto.builder()
+                            .uploaderId(uploadFileDto.getUploaderId())
+                            .albumId(albumId)
+                            .fileType(fileType)
+                            .metadata(uploadFileDto.getMetadata())
+                            .capturedAt(uploadFileDto.getCapturedAt())
+                            .originalPath(originalFilePath)
+                            .fileKey(fileId)
+                        .build()
             );
 
             // 업로드 결과 반환
@@ -127,31 +128,23 @@ public class FileUploadService {
 
     @Transactional
     public File saveFileInfo(
-            Long uploaderId,
-            Long albumId,
-            FileType fileType,
-            String metadata,
-            LocalDateTime capturedAt,
-            String originUrl,
-            String thumbUrl,
-            String displayUrl,
-            String fileKey
+            SaveFileDto saveFileDto
     ) {
         // 유저, 앨범 프록시 객체 생성
-        User uploader = userRepository.getReferenceById(uploaderId);
-        Album album = albumRepository.getReferenceById(albumId);
+        User uploader = userRepository.getReferenceById(saveFileDto.getUploaderId());
+        Album album = albumRepository.getReferenceById(saveFileDto.getAlbumId());
 
         // 저장할 파일 정보 객체 생성
         File uploadedFile = File.builder()
                 .uploader(uploader)
                 .album(album)
-                .originUrl(originUrl)
-                .thumbUrl(thumbUrl)
-                .displayUrl(displayUrl)
-                .fileType(fileType)
-                .metadata(metadata)
-                .fileKey(fileKey)
-                .capturedAt(capturedAt)
+                .originUrl(saveFileDto.getOriginalPath())
+                .thumbUrl(saveFileDto.getThumbnailPath())
+                .displayUrl(saveFileDto.getDisplayPath())
+                .fileType(saveFileDto.getFileType())
+                .metadata(saveFileDto.getMetadata())
+                .fileKey(saveFileDto.getFileKey())
+                .capturedAt(saveFileDto.getCapturedAt())
                 .build();
 
         // DB에 저장

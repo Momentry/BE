@@ -1,5 +1,6 @@
 package com.momentry.BE.domain.file.service;
 
+import com.momentry.BE.domain.file.dto.SaveFileDto;
 import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,15 +35,7 @@ public class MediaResultListener {
 
             // 파일 정보 저장 메서드 호출
             fileUploadService.saveFileInfo(
-                    message.getUploaderId(),
-                    message.getAlbumId(),
-                    message.getFileType(),
-                    message.getMetadata(),
-                    capturedAt,
-                    message.getOriginalPath(),
-                    message.getThumbnailPath(),
-                    message.getDisplayPath(),
-                    message.getFileKey()
+                    SaveFileDto.of(message)
             );
         } else {
             log.error("미디어 처리 실패 메시지 수신: fileId={}", message.getFileKey());
