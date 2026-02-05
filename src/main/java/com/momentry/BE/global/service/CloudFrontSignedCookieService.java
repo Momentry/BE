@@ -44,7 +44,6 @@ public class CloudFrontSignedCookieService {
         }
 
         String cookieValue = generateCookieValue(userId, allowedAlbumIds);
-
         headers.add(HttpHeaders.SET_COOKIE, createCookie(COOKIE_NAME, cookieValue).toString());
 
         return headers;

@@ -248,6 +248,10 @@ public class AlbumService {
         return albumMemberRepository.findAlbumsByUserId(user.getId());
     }
 
+    public List<Long> getAlbumIds(User user) {
+        return albumMemberRepository.findAlbumIdsByUserId(user.getId());
+    }
+
     /**
      * 앨범 멤버 초대
      *
