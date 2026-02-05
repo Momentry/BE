@@ -3,6 +3,7 @@ package com.momentry.BE.domain.file.controller;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.dto.GetFileDetailResponseDto;
 import com.momentry.BE.domain.file.service.FileService;
+import com.momentry.BE.domain.file.service.FileUploadService;
 import com.momentry.BE.global.dto.ApiResponse;
 import com.momentry.BE.security.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.List;
 public class FileController {
 
     private final FileService fileService;
+    private final FileUploadService fileUploadService;
 
     @PutMapping(value = "/{albumId}")
     public ResponseEntity<ApiResponse<List<FileResult>>> uploadFiles(
@@ -26,7 +28,7 @@ public class FileController {
             @RequestParam("file") List<MultipartFile> files
             ){
         // 유저, 앨범 기반으로 파일 업로드 메서드 호출
-        List<FileResult> response = fileService.uploadFiles(SecurityUtil.getCurrentUserId(), albumId, files);
+        List<FileResult> response = fileUploadService.uploadFiles(SecurityUtil.getCurrentUserId(), albumId, files);
         return ApiResponse.ofSuccess(HttpStatus.CREATED, "파일 업로드 성공", response);
     }
 
