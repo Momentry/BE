@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,6 +32,7 @@ import com.momentry.BE.domain.user.dto.UserUpdateResponse;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.service.sub.AlertPreferenceService;
 import com.momentry.BE.domain.user.service.sub.UserService;
+import com.momentry.BE.global.service.CloudFrontSignedCookieService;
 import com.momentry.BE.global.dto.FileCursor;
 import com.momentry.BE.global.exception.CursorDecodeFailException;
 import com.momentry.BE.global.util.CursorUtil;
@@ -43,6 +45,7 @@ public class UserMasterService {
     private final UserService userService;
     private final AlertPreferenceService alertPreferenceService;
     private final AlbumService albumService;
+    private final CloudFrontSignedCookieService cloudFrontSignedCookieService;
 
     // TODO : 나중에 서비스 레이어가 나오면 교체하기
     private final AlbumMemberRepository albumMemberRepository;
@@ -67,6 +70,16 @@ public class UserMasterService {
         User user = userService.getCurrentUser(userId);
         alertPreferenceService.updateAlertPreference(request, user);
     }
+
+    @Transactional(readOnly = true)
+    public void refreshCloudFrontCookie(Long userId, jakarta.servlet.http.HttpServletResponse response) {
+        User user = userService.getCurrentUser(userId);
+        List<Long> albumIds = albumService.getAlbumIds(user);
+        HttpHeaders headers = cloudFrontSignedCookieService
+                .buildSignedCookieHeaders(String.valueOf(user.getId()), albumIds);
+        headers.forEach((name, values) -> values.forEach(value -> response.addHeader(name, value)));
+    }
+
 
     @Transactional(readOnly = true)
     public GetCurrentUserAlbumListResponse getCurrentUserAlbums(Long userId) {
