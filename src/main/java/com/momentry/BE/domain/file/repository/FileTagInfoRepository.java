@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,4 +56,8 @@ public interface FileTagInfoRepository extends JpaRepository<FileTagInfo, Long> 
     // 특정 파일 ID에 연결된 모든 태그 ID 리스트 조회
     @Query("SELECT ft.tag.id FROM FileTagInfo ft WHERE ft.file.id = :fileId")
     List<Long> findTagIdsByFileId(Long fileId);
+
+    @Modifying
+    @Query("DELETE FROM FileTagInfo ft WHERE ft.file.id IN :fileIds")
+    void deleteAllByFileIdIn(@Param("fileIds") List<Long> fileIds);
 }

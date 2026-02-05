@@ -76,6 +76,8 @@ public class FileService {
 
     @Transactional
     public void deleteFiles(Long userId, Long albumId, List<Long> targetFileIds) {
+        if(targetFileIds.isEmpty()) return;
+
         // 해당 앨범의 EDITOR 이상 권한이 있어야 삭제 가능
         albumPermissionService.checkPermission(userId, albumId, MemberAlbumPermission.EDITOR);
 
@@ -89,7 +91,13 @@ public class FileService {
             // S3에서 삭제
             s3Util.deleteAll(targetFile);
         }
+        // TODO: DDL 레벨에서 Cascade 옵션 주기 (일단은 수동으로 지우는걸로 대체 -> 테이블을 다시 만들어야해서!)
         // DB에서 파일 정보 일괄 삭제
+        // 좋아요 정보 삭제
+        fileLikeRepository.deleteAllByFileIdIn(targetFileIds);
+        // 태그 정보 삭제
+        fileTagInfoRepository.deleteAllByFileIdIn(targetFileIds);
+        // 파일 정보 삭제
         fileRepository.deleteAllInBatch(targetFiles);
     }
 

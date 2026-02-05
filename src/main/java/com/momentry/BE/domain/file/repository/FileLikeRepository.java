@@ -47,4 +47,8 @@ public interface FileLikeRepository extends JpaRepository<FileLike, Long> {
         @Modifying
         @Query("DELETE FROM FileLike fl WHERE fl.file.id = :fileId AND fl.user.id = :userId")
         void deleteByFileIdAndUserId(@Param("fileId") Long fileId, @Param("userId") Long userId);
+
+        @Modifying
+        @Query("DELETE FROM FileLike fl WHERE fl.file.id IN :fileIds")
+        void deleteAllByFileIdIn(@Param("fileIds") List<Long> fileIds);
 }
