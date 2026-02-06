@@ -5,8 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.momentry.BE.domain.album.entity.Album;
+import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.file.dto.*;
 import com.momentry.BE.domain.file.util.FileUtil;
+import com.momentry.BE.domain.user.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +36,7 @@ public class FileService {
     private final S3Util s3Util;
     private final FileUtil fileUtil;
     private final AlbumPermissionService albumPermissionService;
+    private final AlbumRepository albumRepository;
     private final FileRepository fileRepository;
     private final FileLikeRepository fileLikeRepository;
     private final UserRepository userRepository;
@@ -102,14 +106,6 @@ public class FileService {
     }
 
     @Transactional
-    public void deleteFile(Long userId, Long albumId, Long targetFileId) {
-        File targetFile = fileRepository.findById(targetFileId)
-                .orElseThrow(FileNotFoundException::new);
-        s3Util.deleteAll(targetFile);
-        fileRepository.delete(targetFile);
-    }
-
-    @Transactional
     public void likeFile(Long userId, Long albumId, Long targetFileId) {
         // 해당 앨범의 VIEWER 이상 권한이 있어야 좋아요 가능
         albumPermissionService.checkPermission(userId, albumId, MemberAlbumPermission.VIEWER);
@@ -169,20 +165,28 @@ public class FileService {
         return GetFileDetailResponseDto.of(targetFile, tags, isLiked, uploaderProfileImageUrl);
     }
 
-    // SQS 메시지 수신 시 해당 파일의 thumbnail, display path를 업데이트
     @Transactional
-    public void updateThumbDisplayPathOfFile(String fileKey, String thumbnailPath, String displayPath, String metadata, String createdAt) {
-        File file = fileRepository.findByFileKey(fileKey)
-                .orElseThrow(FileNotFoundException::new);
+    public void saveFileInfo(
+            SaveFileDto saveFileDto
+    ) {
+        // 유저, 앨범 프록시 객체 생성
+        User uploader = userRepository.getReferenceById(saveFileDto.getUploaderId());
+        Album album = albumRepository.getReferenceById(saveFileDto.getAlbumId());
 
-        // 리사이징된 경로 업데이트
-        file.updatePostProcessingResults(
-                CLOUDFRONT_URL_PREFIX + thumbnailPath,
-                CLOUDFRONT_URL_PREFIX + displayPath,
-                metadata,
-                createdAt==null ? LocalDateTime.now() : LocalDateTime.parse(createdAt)
-        );
+        // 저장할 파일 정보 객체 생성
+        File uploadedFile = File.builder()
+                .uploader(uploader)
+                .album(album)
+                .originUrl(saveFileDto.getOriginalPath())
+                .thumbUrl(saveFileDto.getThumbnailPath())
+                .displayUrl(saveFileDto.getDisplayPath())
+                .fileType(saveFileDto.getFileType())
+                .metadata(saveFileDto.getMetadata())
+                .fileKey(saveFileDto.getFileKey())
+                .capturedAt(saveFileDto.getCapturedAt())
+                .build();
 
-        log.info("파일 정보 업데이트 완료: ID={}", file.getId());
+        // DB에 저장
+        fileRepository.save(uploadedFile);
     }
 }

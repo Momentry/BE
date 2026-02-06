@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class MediaResultListener {
 
-    private final FileUploadService fileUploadService;
+    private final FileService fileService;
 
     @SqsListener(value = "${aws.sqs.queue-name}", factory = "defaultSqsListenerContainerFactory") // application.yml에
                                                                                                   // 정의된 큐 이름
@@ -27,14 +27,8 @@ public class MediaResultListener {
         log.info("SQS 메시지 수신: fileKey={}, status={}, capturedAt={}, fullMessage={}", message.getFileKey(), message.getStatus(), message.getCapturedAt(), message);
 
         if ("SUCCESS".equals(message.getStatus())) {
-            // capturedAt null 체크
-            LocalDateTime capturedAt = LocalDateTime.now();
-            if(message.getCapturedAt() != null && !message.getCapturedAt().isEmpty()){
-                capturedAt = LocalDateTime.parse(message.getCapturedAt());
-            }
-
             // 파일 정보 저장 메서드 호출
-            fileUploadService.saveFileInfo(
+            fileService.saveFileInfo(
                     SaveFileDto.of(message)
             );
         } else {

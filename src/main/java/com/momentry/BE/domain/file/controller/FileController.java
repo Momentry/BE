@@ -2,14 +2,12 @@ package com.momentry.BE.domain.file.controller;
 
 import com.momentry.BE.domain.file.dto.*;
 import com.momentry.BE.domain.file.service.FileService;
-import com.momentry.BE.domain.file.service.FileUploadService;
 import com.momentry.BE.global.dto.ApiResponse;
 import com.momentry.BE.security.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -19,7 +17,6 @@ import java.util.List;
 public class FileController {
 
     private final FileService fileService;
-    private final FileUploadService fileUploadService;
 
     @GetMapping(value = "/{albumId}/upload-url")
     public ResponseEntity<ApiResponse<FileUploadResponseDto>> getUploadUrls(
@@ -29,16 +26,6 @@ public class FileController {
         // 업로드할 파일 개수를 전달
         FileUploadResponseDto uploadUrlList = fileService.getFileUploadUrls(SecurityUtil.getCurrentUserId(), albumId, fileList);
         return ApiResponse.ofSuccess(HttpStatus.OK, "파일 업로드용 url 생성", uploadUrlList);
-    }
-
-    @PutMapping(value = "/{albumId}")
-    public ResponseEntity<ApiResponse<List<FileResult>>> uploadFiles(
-            @PathVariable Long albumId,
-            @RequestParam("file") List<MultipartFile> files
-            ){
-        // 유저, 앨범 기반으로 파일 업로드 메서드 호출
-        List<FileResult> response = fileUploadService.uploadFiles(SecurityUtil.getCurrentUserId(), albumId, files);
-        return ApiResponse.ofSuccess(HttpStatus.CREATED, "파일 업로드 성공", response);
     }
 
     @DeleteMapping(value = "/{albumId}")
