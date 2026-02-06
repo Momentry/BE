@@ -13,7 +13,7 @@ import java.util.List;
 public class GetFileDetailResponseDto {
     private Long fileId;
     private String fileType;
-    private LocalDateTime createdAt;
+    private LocalDateTime capturedAt;
     private Long uploaderId;
     private String uploaderEmail;
     private String uploaderName;
@@ -28,7 +28,7 @@ public class GetFileDetailResponseDto {
         return new GetFileDetailResponseDto(
             file.getId(),
             file.getFileType().toString(),
-            file.getCreatedAt(),
+            file.getCapturedAt(),
             uploaderInfo.getId(),
             uploaderInfo.getEmail(),
             uploaderInfo.getUsername(),

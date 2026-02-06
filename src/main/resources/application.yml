@@ -64,3 +64,12 @@ cloudfront:
 aws:
   sqs:
     queue-name: ${AWS_SQS_FILE_PROCESSED_QUEUE}
+
+# 커스텀 값
+app:
+  s3:
+    # 테스트 환경
+    upload-prefix: test-original/
+
+    # 배포 환경
+#    upload-prefix: original/
