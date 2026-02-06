@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -59,6 +60,16 @@ public class UserController {
 
         return ApiResponse.ofSuccess(request);
     }
+
+    @PostMapping("/{userId}/cloudfront-cookie/refresh")
+    public ResponseEntity<ApiResponse<Void>> refreshCloudFrontCookie(@PathVariable Long userId,
+            jakarta.servlet.http.HttpServletResponse response) {
+        validateSelf(userId);
+        userMasterService.refreshCloudFrontCookie(userId, response);
+
+        return ApiResponse.ofSuccess();
+    }
+
 
     @GetMapping("/{userId}/albums")
     public ResponseEntity<ApiResponse<GetCurrentUserAlbumListResponse>> getCurrentUserAlbumList(

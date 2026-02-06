@@ -1,5 +1,12 @@
 package com.momentry.BE.domain.user.service.master;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.momentry.BE.domain.album.service.AlbumService;
 import com.momentry.BE.domain.user.dto.LoginRequest;
 import com.momentry.BE.domain.user.dto.LoginResponse;
 import com.momentry.BE.domain.user.dto.OidcClaims;
@@ -11,14 +18,13 @@ import com.momentry.BE.domain.user.exception.TokenNotFoundException;
 import com.momentry.BE.domain.user.service.sub.AlertPreferenceService;
 import com.momentry.BE.domain.user.service.sub.UserService;
 import com.momentry.BE.domain.user.validator.IdTokenValidator;
+import com.momentry.BE.global.service.CloudFrontSignedCookieService;
 import com.momentry.BE.security.util.CookieUtil;
 import com.momentry.BE.security.util.JwtUtil;
+
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -26,6 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthMasterService {
     private final UserService userService;
     private final AlertPreferenceService alertPreferenceService;
+    private final CloudFrontSignedCookieService cloudFrontSignedCookieService;
+    private final AlbumService albumService;
     private final IdTokenValidator idTokenValidator;
     private final JwtUtil jwtUtil;
     private final CookieUtil cookieUtil;
@@ -34,7 +42,7 @@ public class AuthMasterService {
     private int refreshTokenExpiration;
 
     @Transactional
-    public LoginResponse login(LoginRequest request, HttpServletResponse response){
+    public LoginResponse login(LoginRequest request, HttpServletResponse response) {
         // 1. id_token 서명 검증 + claims 추출
         OidcClaims claims = idTokenValidator.validateToken(request.getProvider(), request.getIdToken());
 
@@ -42,7 +50,7 @@ public class AuthMasterService {
         User user = userService.findOrCreateUser(claims, request.getProvider());
 
         // 2-1. 회원탈퇴 했던 유저라면 활성화
-        if(!user.getIsActive()){
+        if (!user.getIsActive()) {
             userService.restoreUser(user);
         }
 
@@ -53,17 +61,20 @@ public class AuthMasterService {
         String accessToken = jwtUtil.generateAccessToken(user.getId(), user.getUsername());
         String refreshToken = jwtUtil.generateRefreshToken(user.getId());
 
+        List<Long> albumIds = albumService.getAlbumIds(user);
+        cloudFrontSignedCookieService.addSignedCookieHeaders(response, user.getId(), albumIds);
+
         // 5. refreshToken은 쿠키에 저장하기
         cookieUtil.saveRefreshTokenCookie(response, refreshToken, refreshTokenExpiration);
 
         return new LoginResponse(user, alertPreference, accessToken);
     }
 
-    public void logout(HttpServletResponse response){
+    public void logout(HttpServletResponse response) {
         cookieUtil.deleteRefreshTokenCookie(response);
     }
 
-    public RefreshResponse refresh(String refreshToken, HttpServletResponse response){
+    public RefreshResponse refresh(String refreshToken, HttpServletResponse response) {
         if (refreshToken == null) {
             throw new TokenNotFoundException();
         }
