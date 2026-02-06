@@ -27,4 +27,4 @@ COPY --from=build /app/application/ ./application/
 
 EXPOSE 8080
 
-ENTRYPOINT ["java","-XX:+UseContainerSupport","-XX:MaxRAMPercentage=75.0","org.springframework.boot.loader.launch.JarLauncher"]
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-cp", "spring-boot-loader/*:dependencies/*:snapshot-dependencies/*:application/*", "org.springframework.boot.loader.launch.JarLauncher"]
