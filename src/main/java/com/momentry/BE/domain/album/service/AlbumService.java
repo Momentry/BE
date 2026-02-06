@@ -3,7 +3,9 @@ package com.momentry.BE.domain.album.service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -37,6 +39,7 @@ import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.repository.AlbumTagRepository;
 import com.momentry.BE.domain.file.dto.FilePageResult;
 import com.momentry.BE.domain.file.dto.FileResult;
+import com.momentry.BE.domain.file.dto.TagThumbnailRowDto;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileTagInfo;
 import com.momentry.BE.domain.file.repository.FileRepository;
@@ -512,10 +515,26 @@ public class AlbumService {
         AlbumMember albumMember = getAlbumPermissionWithAlbum(albumId, userId);
 
         List<AlbumTag> tags = albumTagRepository.findByAlbum(albumMember.getAlbum());
+        if (tags.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> tagIds = tags.stream().map(AlbumTag::getId).toList();
+        List<TagThumbnailRowDto> rows = fileTagInfoRepository.findThumbnailRowsByTagIds(tagIds);
+
+        Map<Long, List<String>> thumbnailsByTagId = new HashMap<>();
+        for (TagThumbnailRowDto row : rows) {
+            thumbnailsByTagId.computeIfAbsent(row.getTagId(), key -> new ArrayList<>());
+            List<String> list = thumbnailsByTagId.get(row.getTagId());
+            if (list.size() < 3) {
+                list.add(row.getThumbUrl());
+            }
+        }
 
         List<AlbumTagResult> result = new ArrayList<>();
         for (AlbumTag tag : tags) {
-            result.add(new AlbumTagResult(tag.getId(), tag.getTagName(), tag.getCount()));
+            List<String> thumbnails = thumbnailsByTagId.getOrDefault(tag.getId(), List.of());
+            result.add(new AlbumTagResult(tag.getId(), tag.getTagName(), tag.getCount(), thumbnails));
         }
         return result;
     }

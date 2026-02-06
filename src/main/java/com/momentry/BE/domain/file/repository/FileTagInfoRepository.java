@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.momentry.BE.domain.album.entity.AlbumTag;
+import com.momentry.BE.domain.file.dto.TagThumbnailRowDto;
 import com.momentry.BE.domain.file.entity.FileTagInfo;
 
 @Repository
@@ -38,6 +39,21 @@ public interface FileTagInfoRepository extends JpaRepository<FileTagInfo, Long> 
                                            java.time.LocalDateTime cursorCreatedAt,
                                            Long cursorId,
                                            Pageable pageable);
+
+    @Query(value = """
+            SELECT t.tag_id AS tagId, t.thumb_url AS thumbUrl
+            FROM (
+                SELECT fti.tag_id,
+                       f.thumb_url,
+                       ROW_NUMBER() OVER (PARTITION BY fti.tag_id ORDER BY f.created_at DESC, f.id DESC) AS rn
+                FROM file_tag_infos fti
+                JOIN files f ON f.id = fti.file_id
+                WHERE fti.tag_id IN (:tagIds)
+            ) t
+            WHERE t.rn <= 3
+            ORDER BY t.tag_id ASC, t.rn ASC
+            """, nativeQuery = true)
+    List<TagThumbnailRowDto> findThumbnailRowsByTagIds(List<Long> tagIds);
 
 
     // 특정 파일 리스트에 해당하는 태그 정보 조회
