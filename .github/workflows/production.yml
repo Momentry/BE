@@ -42,7 +42,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/ubuntu
-            docker-compose up -d
+            docker compose up -d
 
       - name: Notify Discord
         if: always()
@@ -81,3 +81,4 @@ jobs:
           curl -H "Content-Type: application/json; charset=utf-8" \
             -d "${PAYLOAD}" \
             ${{ secrets.DISCORD_WEBHOOK_URL }}
+
