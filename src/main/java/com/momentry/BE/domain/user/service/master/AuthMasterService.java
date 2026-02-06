@@ -1,9 +1,8 @@
 package com.momentry.BE.domain.user.service.master;
 
-import org.springframework.beans.factory.annotation.Value;
 import java.util.List;
 
-import org.springframework.http.HttpHeaders;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,9 +62,7 @@ public class AuthMasterService {
         String refreshToken = jwtUtil.generateRefreshToken(user.getId());
 
         List<Long> albumIds = albumService.getAlbumIds(user);
-        HttpHeaders headers = cloudFrontSignedCookieService
-                .buildSignedCookieHeaders(String.valueOf(user.getId()), albumIds);
-        headers.forEach((name, values) -> values.forEach(value -> response.addHeader(name, value)));
+        cloudFrontSignedCookieService.addSignedCookieHeaders(response, user.getId(), albumIds);
 
         // 5. refreshToken은 쿠키에 저장하기
         cookieUtil.saveRefreshTokenCookie(response, refreshToken, refreshTokenExpiration);

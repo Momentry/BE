@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -76,9 +75,7 @@ public class UserMasterService {
     public void refreshCloudFrontCookie(Long userId, HttpServletResponse response) {
         User user = userService.getCurrentUser(userId);
         List<Long> albumIds = albumService.getAlbumIds(user);
-        HttpHeaders headers = cloudFrontSignedCookieService
-                .buildSignedCookieHeaders(String.valueOf(user.getId()), albumIds);
-        headers.forEach((name, values) -> values.forEach(value -> response.addHeader(name, value)));
+        cloudFrontSignedCookieService.addSignedCookieHeaders(response, user.getId(), albumIds);
     }
 
 
