@@ -1,0 +1,75 @@
+spring:
+  config:
+    import:
+      - optional:file:.env[.properties]
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/momentry?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: false
+
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY}
+        secret-key: ${AWS_SECRET_KEY}
+      region:
+        static: ${AWS_S3_REGION:ap-northeast-2}
+      s3:
+        bucket: ${AWS_S3_BUCKET}
+      sqs:
+        listener:
+          acknowledgement-mode: ON_SUCCESS
+
+server:
+  port: 8080
+  url:
+    front: ${FRONT_URL:http://localhost:8081}
+
+jwt:
+  secret-key: ${JWT_SECRET:default-secret}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
+
+cookie:
+  name:
+    refresh: refreshToken
+
+oauth:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:accounts.google.com}
+    issuer: accounts.google.com
+
+cloudfront:
+  enabled: ${CF_ENABLED:false}
+  secret-key: ${CF_SECRET_KEY:}
+  cookie-domain: ${CF_COOKIE_DOMAIN:}
+  cookie-path: ${CF_COOKIE_PATH:/}
+  cookie-ttl-seconds: ${CF_COOKIE_TTL:3600}
+  secure: ${CF_COOKIE_SECURE:true}
+  http-only: ${CF_COOKIE_HTTP_ONLY:true}
+  same-site: ${CF_COOKIE_SAME_SITE:None}
+  url-prefix: ${CF_URL_PREFIX:https://d13zj90l4l6v74.cloudfront.net/album/}
+
+aws:
+  sqs:
+    queue-name: ${AWS_SQS_FILE_PROCESSED_QUEUE}
+
+# 커스텀 값
+app:
+  s3:
+    # 테스트 환경
+    upload-prefix: test-original/
+
+    # 배포 환경
+#    upload-prefix: original/

@@ -1,11 +1,13 @@
 package com.momentry.BE.global.dto;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 
 /**
@@ -36,9 +38,20 @@ public class ApiResponse<T> {
         return ResponseEntity.ok(createResponse(200, "요청에 성공하였습니다.", "SUCCESS", data));
     }
 
+    // 성공 응답 (헤더 포함, 데이터가 있는 경우)
+    public static <T> ResponseEntity<ApiResponse<T>> ofSuccess(HttpHeaders headers, T data){
+        return ResponseEntity.ok().headers(headers)
+                .body(createResponse(200, "요청에 성공하였습니다.", "SUCCESS", data));
+    }
+
     // 성공 응답 (데이터가 없는 경우)
     public static <T> ResponseEntity<ApiResponse<T>> ofSuccess(){
-        return ofSuccess(null);
+        return ofSuccess(HttpStatus.OK);
+    }
+
+    // 성공 응답 (Http 상태 코드를 커스텀하고, 데이터가 없는 경우)
+    public static <T> ResponseEntity<ApiResponse<T>> ofSuccess(HttpStatus statusCode) {
+        return ofSuccess(statusCode, null);
     }
 
     // 성공 응답 (Http 상태 코드를 커스텀하고, 데이터가 있는 경우)
@@ -46,9 +59,9 @@ public class ApiResponse<T> {
         return ResponseEntity.status(statusCode).body(createResponse(statusCode.value(), "요청에 성공하였습니다.", "SUCCESS", data));
     }
 
-    // 성공 응답 (Http 상태 코드를 커스텀하고, 데이터가 없는 경우)
-    public static <T> ResponseEntity<ApiResponse<T>> ofSuccess(HttpStatus statusCode) {
-        return ofSuccess(statusCode, null);
+    // 성공 응답 (Http 상태 코드와 커스텀 메시지, 데이터가 있는 경우)
+    public static <T> ResponseEntity<ApiResponse<T>> ofSuccess(HttpStatus statusCode, String message, T data) {
+        return ResponseEntity.status(statusCode).body(createResponse(statusCode.value(), message, "SUCCESS", data));
     }
 
     // 요청 실패 응답 (4xx 계열)
