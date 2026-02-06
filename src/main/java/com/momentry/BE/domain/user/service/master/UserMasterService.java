@@ -32,11 +32,12 @@ import com.momentry.BE.domain.user.dto.UserUpdateResponse;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.service.sub.AlertPreferenceService;
 import com.momentry.BE.domain.user.service.sub.UserService;
-import com.momentry.BE.global.service.CloudFrontSignedCookieService;
 import com.momentry.BE.global.dto.FileCursor;
 import com.momentry.BE.global.exception.CursorDecodeFailException;
+import com.momentry.BE.global.service.CloudFrontSignedCookieService;
 import com.momentry.BE.global.util.CursorUtil;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -72,7 +73,7 @@ public class UserMasterService {
     }
 
     @Transactional(readOnly = true)
-    public void refreshCloudFrontCookie(Long userId, jakarta.servlet.http.HttpServletResponse response) {
+    public void refreshCloudFrontCookie(Long userId, HttpServletResponse response) {
         User user = userService.getCurrentUser(userId);
         List<Long> albumIds = albumService.getAlbumIds(user);
         HttpHeaders headers = cloudFrontSignedCookieService
