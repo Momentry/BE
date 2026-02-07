@@ -67,7 +67,7 @@ public interface FileRepository extends JpaRepository<File, Long> {
                                         @Param("cursorId") Long cursorId,
                                         Pageable pageable);
 
-    @Query("SELECT f.album.id AS albumId, COUNT(f) AS count FROM File f " +
+    @Query("SELECT new com.momentry.BE.domain.album.dto.AlbumCountDto(f.album.id, CAST(COUNT(f) AS integer)) FROM File f " +
             "WHERE f.album.id IN :albumIds GROUP BY f.album.id")
     List<AlbumCountDto> countFilesByAlbumIds(List<Long> albumIds);
 
