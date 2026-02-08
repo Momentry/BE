@@ -297,6 +297,7 @@ public class UserMasterServiceTest {
                                 .displayUrl("https://example.com/display1.jpg")
                                 .originUrl("https://example.com/origin1.jpg")
                                 .metadata("meta1")
+                                .fileKey("testKey1")
                                 .build();
 
                 File testFile2 = File.builder()
@@ -307,6 +308,7 @@ public class UserMasterServiceTest {
                                 .displayUrl("https://example.com/display2.jpg")
                                 .originUrl("https://example.com/origin2.jpg")
                                 .metadata("meta2")
+                                .fileKey("testKey2")
                                 .build();
 
                 ReflectionTestUtils.setField(testFile1, "id", testFile1Id);
