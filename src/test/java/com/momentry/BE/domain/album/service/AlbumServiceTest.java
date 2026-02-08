@@ -652,22 +652,23 @@ class AlbumServiceTest {
                                 .isInstanceOf(CannotKickManagerException.class);
         }
 
-        private File buildFile(Album album, LocalDateTime createdAt, Long id) {
-                AccountPlan plan = AccountPlan.builder().plan("FREE").build();
-                User user = User.builder().email("test@a.com").username("user").accountPlan(plan).build();
-                File file = File.builder()
-                                .album(album)
-                                .fileKey("test.jpg")
-                                .originUrl("https://example.com/original.jpg")
-                                .thumbUrl("https://example.com/thumb.jpg")
-                                .displayUrl("https://example.com/display.jpg")
-                                .fileType(FileType.IMAGE)
-                                .uploader(user)
-                                .capturedAt(createdAt)
-                                .build();
-                ReflectionTestUtils.setField(file, "id", id);
-                return file;
-        }
+//        private File buildFile(Album album, LocalDateTime createdAt, Long id) {
+//                AccountPlan plan = AccountPlan.builder().plan("FREE").build();
+//                User user = User.builder().email("test@a.com").username("user").accountPlan(plan).build();
+//                File file = File.builder()
+//                                .album(album)
+//                                .fileKey("test-file-key-" + id)
+//                                .originUrl("https://example.com/original.jpg")
+//                                .thumbUrl("https://example.com/thumb.jpg")
+//                                .displayUrl("https://example.com/display.jpg")
+//                                .fileType(FileType.IMAGE)
+//                                .uploader(user)
+//                                .capturedAt(createdAt)
+//                                .build();
+//                ReflectionTestUtils.setField(file, "id", id);
+//                ReflectionTestUtils.setField(file, "createdAt", createdAt);
+//                return file;
+//        }
 
         private String encodeCursor(LocalDateTime createdAt, Long id) {
                 String payload = createdAt + "|" + id;
