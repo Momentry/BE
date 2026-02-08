@@ -414,12 +414,7 @@ public class AlbumService {
         List<AlbumMember> albumMembers = albumMemberRepository.findByAlbumIdWithUser(albumId);
         int memberCount = albumMembers.size();
         List<AlbumMemberResult> albumMemberResults = albumMembers.stream()
-                .map(albumMember -> new AlbumMemberResult(
-                        albumMember.getUser().getEmail(),
-                        albumMember.getUser().getId(),
-                        albumMember.getUser().getUsername(),
-                        albumMember.getUser().getProfileImageUrl(),
-                        albumMember.getPermission()))
+                .map(AlbumMemberResult::of)
                 .toList();
         return new AlbumMemberResponse(memberCount, albumMemberResults);
     }
