@@ -660,7 +660,7 @@ class AlbumServiceTest {
                                 .displayUrl("https://example.com/display.jpg")
                                 .fileType(FileType.IMAGE)
                                 .uploader(user)
-                                .createdAt(createdAt)
+                                .capturedAt(createdAt)
                                 .build();
                 ReflectionTestUtils.setField(file, "id", id);
                 return file;
