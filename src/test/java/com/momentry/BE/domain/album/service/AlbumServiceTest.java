@@ -105,9 +105,11 @@ class AlbumServiceTest {
                 assertThat(result.isHasNext()).isTrue();
                 assertThat(result.getNextCursor()).isNotBlank();
 
-                String payload = new String(Base64.getUrlDecoder().decode(result.getNextCursor()),
-                                StandardCharsets.UTF_8);
-                assertThat(payload).isEqualTo(createdAt + "|" + 200L);
+                String[] cursorParts = new String(Base64.getUrlDecoder().decode(result.getNextCursor()),
+                                StandardCharsets.UTF_8).split("\\|", 2);
+                assertThat(cursorParts).hasSize(2);
+                assertThat(LocalDateTime.parse(cursorParts[0])).isNotNull();
+                assertThat(cursorParts[1]).isEqualTo("200");
 
                 ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
                 verify(fileRepository).findByAlbumOrderByCreatedAtDescIdDesc(eq(album), pageableCaptor.capture());
@@ -655,6 +657,7 @@ class AlbumServiceTest {
                 User user = User.builder().email("test@a.com").username("user").accountPlan(plan).build();
                 File file = File.builder()
                                 .album(album)
+                                .fileKey("test.jpg")
                                 .originUrl("https://example.com/original.jpg")
                                 .thumbUrl("https://example.com/thumb.jpg")
                                 .displayUrl("https://example.com/display.jpg")
