@@ -88,7 +88,9 @@ public class AlbumService {
 
         // 커버 이미지 URL 설정
         String finalCoverImageUrl = DEFAULT_COVER_IMAGE_URL;
+        Boolean includeThumnail = false;
         if (coverImage != null && !coverImage.isEmpty()) {
+            includeThumnail = true;
             // S3 업로드 서비스 구현 시 여기서 파일 업로드 처리
             // finalCoverImageUrl = s3UploadService.uploadFile(coverImage);
             // 현재는 파일이 있어도 업로드하지 않고 default 이미지 사용
@@ -111,7 +113,7 @@ public class AlbumService {
 
         albumMemberRepository.save(albumMember);
 
-        return new AlbumCreationResponse(savedAlbum.getId(), savedAlbum.getName());
+        return new AlbumCreationResponse(savedAlbum.getId(), savedAlbum.getName(), includeThumnail);
     }
 
     /**
