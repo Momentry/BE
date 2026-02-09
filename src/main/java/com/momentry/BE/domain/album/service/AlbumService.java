@@ -16,7 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.momentry.BE.domain.album.dto.AlbumCreationResponse;
 import com.momentry.BE.domain.album.dto.AlbumDetailResponse;
 import com.momentry.BE.domain.album.dto.AlbumMemberInviteResult;
+import com.momentry.BE.domain.album.dto.AlbumMemberResponse;
 import com.momentry.BE.domain.album.dto.AlbumTagResult;
+import com.momentry.BE.domain.album.dto.AlbumMemberResult;
 import com.momentry.BE.domain.album.dto.InvitedMemberResult;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.entity.AlbumMember;
@@ -248,8 +250,7 @@ public class AlbumService {
         }
     }
 
-
-    public List<Album> getJoinedAlbums(User user){
+    public List<Album> getJoinedAlbums(User user) {
         return albumMemberRepository.findAlbumsByUserId(user.getId());
     }
 
@@ -397,6 +398,25 @@ public class AlbumService {
         AlbumMember targetMember = getAlbumMember(albumId, memberId);
 
         targetMember.changePermission(targetPermission);
+    }
+
+    /**
+     * 앨범 멤버 목록 조회
+     * 
+     * @param albumId 앨범 ID
+     * @param userId  사용자 ID
+     * @return AlbumMemberResponse
+     */
+    public AlbumMemberResponse getAlbumMembers(Long albumId, Long userId) {
+
+        getAlbumPermission(albumId, userId);
+
+        List<AlbumMember> albumMembers = albumMemberRepository.findByAlbumIdWithUser(albumId);
+        int memberCount = albumMembers.size();
+        List<AlbumMemberResult> albumMemberResults = albumMembers.stream()
+                .map(AlbumMemberResult::of)
+                .toList();
+        return new AlbumMemberResponse(memberCount, albumMemberResults);
     }
 
     /**

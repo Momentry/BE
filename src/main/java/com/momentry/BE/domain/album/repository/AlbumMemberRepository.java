@@ -24,7 +24,7 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
     Optional<AlbumMember> findByAlbumIdAndUserIdWithAlbum(@Param("albumId") Long albumId,
             @Param("userId") Long userId);
 
-    @Query("SELECT am FROM AlbumMember am JOIN FETCH am.user WHERE am.album.id = :albumId")
+    @Query("SELECT am FROM AlbumMember am JOIN FETCH am.user u WHERE am.album.id = :albumId ORDER BY u.username ASC")
     List<AlbumMember> findByAlbumIdWithUser(@Param("albumId") Long albumId);
 
     @Query("SELECT am.album FROM AlbumMember am WHERE am.user.id = :userId")
@@ -32,7 +32,6 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
 
     @Query("SELECT am.album.id FROM AlbumMember am WHERE am.user.id = :userId")
     List<Long> findAlbumIdsByUserId(Long userId);
-
 
     @Query("SELECT new com.momentry.BE.domain.album.dto.AlbumCountDto(am.album.id, CAST(COUNT(am) AS integer)) FROM AlbumMember am "
             +

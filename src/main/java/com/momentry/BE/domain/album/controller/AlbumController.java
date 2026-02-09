@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.momentry.BE.domain.album.dto.AlbumCreationRequest;
 import com.momentry.BE.domain.album.dto.AlbumCreationResponse;
 import com.momentry.BE.domain.album.dto.AlbumDetailResponse;
+import com.momentry.BE.domain.album.dto.AlbumMemberResponse;
 import com.momentry.BE.domain.album.dto.AlbumMemberInviteRequest;
 import com.momentry.BE.domain.album.dto.AlbumMemberInviteResult;
 import com.momentry.BE.domain.album.dto.AlbumMemberPermissionUpdateRequest;
@@ -154,6 +155,13 @@ public class AlbumController {
             @RequestParam(defaultValue = "20") int size) {
         FilePageResult result = albumService.getFiles(albumId, tagId, cursor, size, SecurityUtil.getCurrentUserId());
         return ApiResponse.ofSuccess(result);
+    }
+
+    @GetMapping("/{albumId}/members")
+    public ResponseEntity<ApiResponse<AlbumMemberResponse>> getAlbumMembers(
+            @PathVariable Long albumId) {
+        AlbumMemberResponse response = albumService.getAlbumMembers(albumId, SecurityUtil.getCurrentUserId());
+        return ApiResponse.ofSuccess(HttpStatus.OK, "앨범 멤버 조회 성공", response);
     }
 
     @PostMapping("/{albumId}/members")
