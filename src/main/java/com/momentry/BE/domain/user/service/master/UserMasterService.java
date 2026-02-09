@@ -33,8 +33,10 @@ import com.momentry.BE.domain.user.service.sub.AlertPreferenceService;
 import com.momentry.BE.domain.user.service.sub.UserService;
 import com.momentry.BE.global.dto.FileCursor;
 import com.momentry.BE.global.exception.CursorDecodeFailException;
+import com.momentry.BE.global.service.CloudFrontSignedCookieService;
 import com.momentry.BE.global.util.CursorUtil;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -43,6 +45,7 @@ public class UserMasterService {
     private final UserService userService;
     private final AlertPreferenceService alertPreferenceService;
     private final AlbumService albumService;
+    private final CloudFrontSignedCookieService cloudFrontSignedCookieService;
 
     // TODO : 나중에 서비스 레이어가 나오면 교체하기
     private final AlbumMemberRepository albumMemberRepository;
@@ -67,6 +70,14 @@ public class UserMasterService {
         User user = userService.getCurrentUser(userId);
         alertPreferenceService.updateAlertPreference(request, user);
     }
+
+    @Transactional(readOnly = true)
+    public void refreshCloudFrontCookie(Long userId, HttpServletResponse response) {
+        User user = userService.getCurrentUser(userId);
+        List<Long> albumIds = albumService.getAlbumIds(user);
+        cloudFrontSignedCookieService.addSignedCookieHeaders(response, user.getId(), albumIds);
+    }
+
 
     @Transactional(readOnly = true)
     public GetCurrentUserAlbumListResponse getCurrentUserAlbums(Long userId) {

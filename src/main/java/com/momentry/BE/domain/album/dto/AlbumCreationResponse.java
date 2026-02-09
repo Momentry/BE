@@ -8,4 +8,5 @@ import lombok.Getter;
 public class AlbumCreationResponse {
     private Long albumId;
     private String albumName;
+    private Boolean includeThumnail;
 }

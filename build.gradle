@@ -1,7 +1,8 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '4.0.1'
-	id 'io.spring.dependency-management' version '1.1.7'
+    id 'java'
+    id 'org.springframework.boot' version '4.0.1'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'com.momentry'
@@ -9,66 +10,97 @@ version = '0.0.1-SNAPSHOT'
 description = 'Momentry - BE Spring Boot Project'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-	// =========== 필수 의존성 ===========
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    // =========== 필수 의존성 ===========
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
-	implementation 'io.jsonwebtoken:jjwt-impl:0.12.6'
-	implementation 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
-	// Google ID Token 검증을 위한 의존성
-	implementation 'com.google.api-client:google-api-client:2.7.0'
-	implementation 'com.google.oauth-client:google-oauth-client:1.36.0'
-	implementation 'com.google.http-client:google-http-client-jackson2:1.45.0'
+    // Google ID Token 검증을 위한 의존성
+    implementation 'com.google.api-client:google-api-client:2.7.0'
+    implementation 'com.google.oauth-client:google-oauth-client:1.36.0'
+    implementation 'com.google.http-client:google-http-client-jackson2:1.45.0'
 
-	// =========== DB ===========
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	runtimeOnly 'com.mysql:mysql-connector-j'
+    // =========== DB ===========
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'com.mysql:mysql-connector-j'
 
-	// =========== AWS SDK ===========
-	implementation enforcedPlatform('software.amazon.awssdk:bom:2.25.59')
+    // =========== AWS SDK ===========
+    implementation enforcedPlatform('software.amazon.awssdk:bom:2.25.59')
 
-	// =========== CloudFront Signed Cookie ===========
-	implementation 'software.amazon.awssdk:cloudfront'
+    // =========== CloudFront Signed Cookie ===========
+    implementation 'software.amazon.awssdk:cloudfront'
 
-	// =========== AWS S3 ===========
-	implementation 'software.amazon.awssdk:s3'
+    // =========== AWS S3 ===========
+    implementation 'software.amazon.awssdk:s3'
 
-	// =========== AWS SQS ===========
-	implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs:3.3.0'
+    // =========== AWS SQS ===========
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs:3.3.0'
 
-	// =========== Firebase Admin SDK ===========
-	implementation "com.google.firebase:firebase-admin:9.7.1"
+    // =========== Firebase Admin SDK ===========
+    implementation "com.google.firebase:firebase-admin:9.7.1"
 
-	// =========== Test ===========
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.security:spring-security-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	testImplementation 'org.mockito:mockito-core:5.11.0'
-	testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
+    // =========== Test ===========
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+	  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	  testImplementation 'org.mockito:mockito-core:5.11.0'
+	  testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
+    finalizedBy tasks.named('jacocoTestReport')
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+// =========== Docker Image Build ===========
+tasks.named('bootBuildImage') {
+    imageName = '941kjw/momentry:latest'
+    publish = true
+    
+    environment = [
+        'BP_JVM_VERSION': '21',
+        'BPE_DELIM_JAVA_TOOL_OPTIONS': ' ',
+        'BPE_APPEND_JAVA_TOOL_OPTIONS': '-XX:+UseG1GC -XX:MaxRAMPercentage=75.0'
+    ]
+    
+    buildCache {
+        volume {
+            name = "cache-${rootProject.name}.build"
+        }
+    }
 }

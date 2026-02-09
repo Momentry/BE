@@ -17,6 +17,7 @@ import org.springframework.util.StringUtils;
 
 import com.momentry.BE.global.config.CloudFrontProperties;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -36,7 +37,7 @@ public class CloudFrontSignedCookieService {
     private static final String HMAC_ALGORITHM = "HmacSHA256";
     private static final String COOKIE_NAME = "momentry_album_access";
 
-    public HttpHeaders buildSignedCookieHeaders(String userId, List<Long> allowedAlbumIds) {
+    public HttpHeaders buildSignedCookieHeaders(Long userId, List<Long> allowedAlbumIds) {
         HttpHeaders headers = new HttpHeaders();
         
         if (!properties.isEnabled()) {
@@ -44,20 +45,24 @@ public class CloudFrontSignedCookieService {
         }
 
         String cookieValue = generateCookieValue(userId, allowedAlbumIds);
-
         headers.add(HttpHeaders.SET_COOKIE, createCookie(COOKIE_NAME, cookieValue).toString());
 
         return headers;
     }
 
-    private String generateCookieValue(String userId, List<Long> albumIds) {
+    public void addSignedCookieHeaders(HttpServletResponse response, Long userId, List<Long> allowedAlbumIds) {
+        HttpHeaders headers = buildSignedCookieHeaders(userId, allowedAlbumIds);
+        headers.forEach((name, values) -> values.forEach(value -> response.addHeader(name, value)));
+    }
+
+    private String generateCookieValue(Long userId, List<Long> albumIds) {
         long exp = System.currentTimeMillis() / 1000 + properties.getCookieTtlSeconds();
         
         String albumsStr = albumIds.stream()
                 .map(String::valueOf)
                 .collect(Collectors.joining(","));
 
-        String data = String.format("%s:%d:%s", userId, exp, albumsStr);
+        String data = String.format("%d:%d:%s", userId, exp, albumsStr);
 
         String signature = sign(data);
 
