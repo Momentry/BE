@@ -36,6 +36,9 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew bootJar -x test
 
+      - name: Build TEST
+        run: ls -l build/libs/
+
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
@@ -44,15 +47,6 @@ jobs:
           tags: 941kjw/momentry:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Build and Push with Buildpacks
-        run: |
-          ./gradlew bootBuildImage \
-            --imageName=941kjw/momentry:latest \
-            --publishImage
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -103,4 +97,5 @@ jobs:
           curl -H "Content-Type: application/json; charset=utf-8" \
             -d "${PAYLOAD}" \
             ${{ secrets.DISCORD_WEBHOOK_URL }}
+
 
