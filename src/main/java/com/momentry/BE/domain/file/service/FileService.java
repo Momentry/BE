@@ -79,6 +79,32 @@ public class FileService {
     }
 
     @Transactional
+    public FileDownloadResponseDto getFileDownloadUrls(Long downloaderId, Long albumId, FileDownloadRequestDto getFileDownloadUrlRequestDto ){
+        // 유저 권한 체크
+        albumPermissionService.checkPermission(downloaderId, albumId, MemberAlbumPermission.VIEWER);
+
+        List<Long> fileIdList = getFileDownloadUrlRequestDto.getDownloadFileIdList();
+
+        // 파일 조회
+        List<File> fileList = fileRepository.findAllById(fileIdList);
+
+        // 다운로드 URL 생성
+        List<DownloadUrlResponseDto> downloadUrlList = new ArrayList<>();
+        for(File file : fileList){
+            String downloadUrl = s3Util.generatePresignedDownloadUrl(file.getOriginUrl(), file.getFileKey(), file.getContentType());
+            downloadUrlList.add(
+                    DownloadUrlResponseDto.builder()
+                            .downloadUrl(downloadUrl)
+                            .fileId(file.getId())
+                            .contentType(file.getContentType())
+                            .build()
+            );
+        }
+
+        return FileDownloadResponseDto.of(downloadUrlList);
+    }
+
+    @Transactional
     public void deleteFiles(Long userId, Long albumId, List<Long> targetFileIds) {
         if(targetFileIds.isEmpty()) return;
 
