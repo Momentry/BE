@@ -8,6 +8,7 @@ import com.google.firebase.messaging.BatchResponse;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.MulticastMessage;
 import com.google.firebase.messaging.Notification;
+import com.momentry.BE.global.exception.FcmTokenEmptyException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -53,7 +54,7 @@ public class FcmService {
     ) {
         if (tokens == null || tokens.isEmpty()) {
             log.warn("토큰 리스트가 비어 있습니다.");
-            throw new IllegalArgumentException("토큰 리스트는 비어 있을 수 없습니다.");
+            throw new FcmTokenEmptyException();
         }
 
         MulticastMessage.Builder builder = MulticastMessage.builder()
