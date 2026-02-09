@@ -104,4 +104,9 @@ public class S3Util {
         PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
         return presignedRequest.url().toString();
     }
+
+    public String generatePresignedDownloadUrl(Long downloaderId, String fileKey, String contentType){
+
+        return null;
+    }
 }

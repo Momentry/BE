@@ -182,6 +182,7 @@ public class FileService {
                 .displayUrl(saveFileDto.getDisplayPath())
                 .fileType(saveFileDto.getFileType())
                 .metadata(saveFileDto.getMetadata())
+                .contentType(saveFileDto.getContentType())
                 .fileKey(saveFileDto.getFileKey())
                 .capturedAt(saveFileDto.getCapturedAt())
                 .build();

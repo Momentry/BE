@@ -18,6 +18,7 @@ public class SaveFileDto {
     private Long albumId;
     private FileType fileType;
     private String metadata;
+    private String contentType;
     private LocalDateTime capturedAt;
     private String originalPath;
     private String thumbnailPath;
@@ -37,6 +38,7 @@ public class SaveFileDto {
                 .albumId(uploadMessage.getAlbumId())
                 .fileType(uploadMessage.getFileType())
                 .metadata(uploadMessage.getMetadata())
+                .contentType(uploadMessage.getContentType())
                 .capturedAt(capturedAt)
                 .originalPath(uploadMessage.getOriginalPath())
                 .thumbnailPath(uploadMessage.getThumbnailPath())
