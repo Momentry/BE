@@ -69,6 +69,9 @@ aws:
   sqs:
     queue-name: ${AWS_SQS_FILE_PROCESSED_QUEUE}
 
+firebase:
+  credentials-path: ${FIREBASE_CREDENTIALS_PATH:src/main/resources/serviceAccountKey.json}
+
 # 커스텀 값
 app:
   s3:
