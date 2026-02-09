@@ -1,30 +1,22 @@
-FROM gradle:8.7.0-jdk21 AS build
+# 1단계: 빌드 결과물 추출 (레이어 분리)
+FROM eclipse-temurin:21-jre-alpine AS extract
+WORKDIR /app
+# 위 yml에서 생성한 bootJar 파일을 복사
+COPY build/libs/*.jar app.jar
+# 스프링 부트 4의 레이어 추출 기능 사용
+RUN java -Djarmode=layertools -jar app.jar extract
+
+# 2단계: 실제 실행 이미지 생성
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Cache dependencies first
-COPY gradle/ gradle/
-COPY gradlew gradlew
-COPY gradlew.bat gradlew.bat
-COPY settings.gradle build.gradle ./
-RUN --mount=type=cache,target=/home/gradle/.gradle \
-    ./gradlew --no-daemon dependencies
+# 변경이 거의 없는 의존성을 먼저 복사 (GHA 캐시가 여기서 터짐!)
+COPY --from=extract /app/dependencies/ ./
+COPY --from=extract /app/spring-boot-loader/ ./
+COPY --from=extract /app/snapshot-dependencies/ ./
+# 자주 바뀌는 내 코드만 마지막에 복사
+COPY --from=extract /app/application/ ./
 
-# Build application
-COPY src/ src/
-RUN --mount=type=cache,target=/home/gradle/.gradle \
-    ./gradlew --no-daemon clean bootJar
-
-# Extract layered jar
-RUN java -Djarmode=layertools -jar build/libs/*.jar extract
-
-FROM gcr.io/distroless/java21-debian12
-WORKDIR /app
-
-COPY --from=build /app/dependencies/ ./dependencies/
-COPY --from=build /app/spring-boot-loader/ ./spring-boot-loader/
-COPY --from=build /app/snapshot-dependencies/ ./snapshot-dependencies/
-COPY --from=build /app/application/ ./application/
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
 
 EXPOSE 8080
-
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-cp", "spring-boot-loader/*:dependencies/*:snapshot-dependencies/*:application/*", "org.springframework.boot.loader.launch.JarLauncher"]
