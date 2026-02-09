@@ -59,12 +59,15 @@ dependencies {
     // =========== AWS SQS ===========
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs:3.3.0'
 
+    // =========== Firebase Admin SDK ===========
+    implementation "com.google.firebase:firebase-admin:9.7.1"
+
     // =========== Test ===========
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testImplementation 'org.mockito:mockito-core:5.11.0'
-    testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
+	  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	  testImplementation 'org.mockito:mockito-core:5.11.0'
+	  testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
 }
 
 tasks.named('test') {
