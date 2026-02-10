@@ -18,7 +18,7 @@ public class FileController {
 
     private final FileService fileService;
 
-    @GetMapping(value = "/{albumId}/upload-url")
+    @PostMapping(value = "/{albumId}/upload-url")
     public ResponseEntity<ApiResponse<FileUploadResponseDto>> getUploadUrls(
             @PathVariable Long albumId,
             @RequestBody FileUploadRequestDto fileList
@@ -28,7 +28,7 @@ public class FileController {
         return ApiResponse.ofSuccess(HttpStatus.OK, "파일 업로드용 url 생성", uploadUrlList);
     }
 
-    @GetMapping(value = "/{albumId}/download-url")
+    @PostMapping(value = "/{albumId}/download-url")
     public ResponseEntity<ApiResponse<FileDownloadResponseDto>> getDownloadUrls(
             @PathVariable Long albumId,
             @RequestBody FileDownloadRequestDto downloadFileIdList
