@@ -35,6 +35,7 @@ public class MediaResultListener {
                 // TODO: 파일 업로드 사실을 클라이언트에게 FCM으로 알리기
             }catch (DataIntegrityViolationException e){
                 // 데이터 무결성에 의해 실패 -> 재시도 하지 않고 해당 메시지는 폐기
+                log.error("파일 정보 DB 저장 도중 에러 발생: {}", e.toString());
                 // TODO: 잘못된 사용자 요청으로 파일 업로드에 실패했다는 사실을 클라이언트에게 FCM으로 알리기
             }
         } else {
