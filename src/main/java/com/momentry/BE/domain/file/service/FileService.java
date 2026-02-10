@@ -4,17 +4,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import com.momentry.BE.domain.album.entity.Album;
-import com.momentry.BE.domain.album.repository.AlbumRepository;
-import com.momentry.BE.domain.file.dto.*;
-import com.momentry.BE.domain.file.util.FileUtil;
-import com.momentry.BE.domain.user.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.entity.MemberAlbumPermission;
+import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.service.AlbumPermissionService;
+import com.momentry.BE.domain.file.dto.DownloadUrlDto;
+import com.momentry.BE.domain.file.dto.FileDownloadRequestDto;
+import com.momentry.BE.domain.file.dto.FileDownloadResponseDto;
+import com.momentry.BE.domain.file.dto.FileUploadRequestDto;
+import com.momentry.BE.domain.file.dto.FileUploadResponseDto;
+import com.momentry.BE.domain.file.dto.GetFileDetailResponseDto;
+import com.momentry.BE.domain.file.dto.SaveFileDto;
+import com.momentry.BE.domain.file.dto.UploadFileInfoDto;
+import com.momentry.BE.domain.file.dto.UploadUrlDto;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileLike;
 import com.momentry.BE.domain.file.exception.AlreadyLikedException;
@@ -22,6 +28,8 @@ import com.momentry.BE.domain.file.exception.FileNotFoundException;
 import com.momentry.BE.domain.file.repository.FileLikeRepository;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import com.momentry.BE.domain.file.repository.FileTagInfoRepository;
+import com.momentry.BE.domain.file.util.FileUtil;
+import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.repository.UserRepository;
 import com.momentry.BE.global.util.S3Util;
 
@@ -203,8 +211,8 @@ public class FileService {
                 .uploader(uploader)
                 .album(album)
                 .originUrl(saveFileDto.getOriginalPath())
-                .thumbUrl(saveFileDto.getThumbnailPath())
-                .displayUrl(saveFileDto.getDisplayPath())
+                .thumbUrl(CLOUDFRONT_URL_PREFIX + saveFileDto.getThumbnailPath())
+                .displayUrl(CLOUDFRONT_URL_PREFIX + saveFileDto.getDisplayPath())
                 .fileType(saveFileDto.getFileType())
                 .metadata(saveFileDto.getMetadata())
                 .contentType(saveFileDto.getContentType())
