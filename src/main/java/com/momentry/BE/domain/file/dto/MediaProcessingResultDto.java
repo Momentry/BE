@@ -21,4 +21,5 @@ public class MediaProcessingResultDto {
     private String status;        // "SUCCESS" 또는 "FAILURE"
     private String capturedAt;
     private String metadata;
+    private String contentType;
 }

@@ -28,6 +28,15 @@ public class FileController {
         return ApiResponse.ofSuccess(HttpStatus.OK, "파일 업로드용 url 생성", uploadUrlList);
     }
 
+    @GetMapping(value = "/{albumId}/download-url")
+    public ResponseEntity<ApiResponse<FileDownloadResponseDto>> getDownloadUrls(
+            @PathVariable Long albumId,
+            @RequestBody FileDownloadRequestDto downloadFileIdList
+    ){
+        FileDownloadResponseDto downloadUrlList = fileService.getFileDownloadUrls(SecurityUtil.getCurrentUserId(), albumId, downloadFileIdList);
+        return ApiResponse.ofSuccess(HttpStatus.OK, "파일 다운로드용 url 생성", downloadUrlList);
+    }
+
     @DeleteMapping(value = "/{albumId}")
     public ResponseEntity<ApiResponse<Void>> deleteFiles(
             @PathVariable Long albumId,

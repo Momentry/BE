@@ -104,4 +104,26 @@ public class S3Util {
         PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
         return presignedRequest.url().toString();
     }
+
+    public String generatePresignedDownloadUrl(String originUrl, String contentType){
+        if (!hasText(originUrl)) return null;
+
+        // 파일 조회 설정 정의
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(originUrl)
+                .responseContentDisposition("attachment;")
+                .responseContentType(contentType)
+                .build();
+
+        // Presigned URL 발급 옵션 설정
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofMinutes(10))
+                .getObjectRequest(getObjectRequest)
+                .build();
+
+        // URL 발급
+        PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+        return presignedRequest.url().toString();
+    }
 }

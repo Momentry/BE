@@ -40,6 +40,8 @@ public class File {
     @Column(columnDefinition = "json")
     private String metadata; // 촬영 장비, 해상도 등 JSON 데이터
 
+    private String contentType;
+
     @Column(nullable = false, columnDefinition = "bigint default 0")
     private Long likesCount = 0L;
 
@@ -55,7 +57,7 @@ public class File {
 
     @Builder
     public File(Album album, String fileKey, String originUrl, String thumbUrl, String displayUrl,
-                String metadata, FileType fileType, User uploader, LocalDateTime capturedAt) {
+                String metadata, String contentType, FileType fileType, User uploader, LocalDateTime capturedAt) {
         // 유효성 체크: 필수 값이 없으면 객체 생성 자체를 막음
         Assert.notNull(album, "앨범은 필수 값입니다.");
         Assert.hasText(fileKey, "파일 키는 필수 값입니다.");
@@ -69,6 +71,7 @@ public class File {
         this.thumbUrl = thumbUrl;
         this.displayUrl = displayUrl;
         this.metadata = metadata;
+        this.contentType = contentType;
         this.fileType = fileType;
         this.uploader = uploader;
         this.capturedAt = capturedAt;
