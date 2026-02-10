@@ -19,7 +19,7 @@ public class AuthController {
     @PostMapping("/social")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody LoginRequest request, HttpServletResponse response){
         LoginResponse responseData = authMasterService.login(request, response);
-
+        
         return ApiResponse.ofSuccess(responseData);
     }
 
