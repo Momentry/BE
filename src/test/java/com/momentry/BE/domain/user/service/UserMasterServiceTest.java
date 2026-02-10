@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.momentry.BE.domain.user.dto.UpdateUserInfoRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -72,20 +73,21 @@ public class UserMasterServiceTest {
                 Long userId = 1L;
                 String newUsername = "new_name";
                 MultipartFile mockFile = mock(MultipartFile.class);
-                UserUpdateResponse expectedResponse = new UserUpdateResponse("testImageUrl", newUsername);
+                UpdateUserInfoRequest request = new UpdateUserInfoRequest(newUsername);
+                UserUpdateResponse expectedResponse = new UserUpdateResponse(newUsername);
+
 
                 // userService.update가 호출되면 준비한 응답을 반환하도록 설정
-                when(userService.update(anyLong(), any(MultipartFile.class), anyString()))
+                when(userService.update(anyLong(), request))
                                 .thenReturn(expectedResponse);
 
                 // 2. When
-                UserUpdateResponse actualResponse = userMasterService.updateUser(userId, mockFile, newUsername);
+                UserUpdateResponse actualResponse = userMasterService.updateUser(userId, request);
 
                 // 3. Then
                 assertThat(actualResponse.getUserName()).isEqualTo(expectedResponse.getUserName());
-                assertThat(actualResponse.getProfileUrl()).isEqualTo(expectedResponse.getProfileUrl());
 
-                verify(userService, times(1)).update(userId, mockFile, newUsername);
+                verify(userService, times(1)).update(userId,request);
         }
 
         @Test
@@ -95,13 +97,14 @@ public class UserMasterServiceTest {
                 Long notFoundUserId = 999L;
                 String newUsername = "fail_name";
                 MultipartFile mockFile = mock(MultipartFile.class);
+                UpdateUserInfoRequest request = new UpdateUserInfoRequest(newUsername);
 
                 // userService.update 호출 시 EntityNotFoundException이 발생하도록 설정
-                when(userService.update(eq(notFoundUserId), any(), anyString()))
+                when(userService.update(eq(notFoundUserId), any()))
                                 .thenThrow(new UserNotFoundException());
 
                 // 2. When & Then
-                assertThatThrownBy(() -> userMasterService.updateUser(notFoundUserId, mockFile, newUsername))
+                assertThatThrownBy(() -> userMasterService.updateUser(notFoundUserId, request))
                                 .isInstanceOf(UserNotFoundException.class);
         }
 
