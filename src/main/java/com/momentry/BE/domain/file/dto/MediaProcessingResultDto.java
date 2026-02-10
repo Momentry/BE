@@ -1,0 +1,25 @@
+package com.momentry.BE.domain.file.dto;
+
+import com.momentry.BE.domain.file.entity.FileType;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
+public class MediaProcessingResultDto {
+    private Long albumId;
+    private Long uploaderId;
+    private FileType fileType;
+    private String fileKey;
+    private String originalPath;
+    private String thumbnailPath; // 예: "thumbnail/1/uuid.jpg"
+    private String displayPath;   // 예: "display/1/uuid.jpg"
+    private String status;        // "SUCCESS" 또는 "FAILURE"
+    private String capturedAt;
+    private String metadata;
+    private String contentType;
+}
