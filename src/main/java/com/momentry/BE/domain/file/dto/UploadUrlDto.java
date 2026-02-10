@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 @Builder
-public class UploadUrlResponseDto {
+public class UploadUrlDto {
     private Long fileNo;
     private String uploadUrl;
 }

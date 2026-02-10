@@ -105,7 +105,7 @@ public class S3Util {
         return presignedRequest.url().toString();
     }
 
-    public String generatePresignedDownloadUrl(String originUrl, String fileKey, String contentType){
+    public String generatePresignedDownloadUrl(String originUrl, String contentType){
         if (!hasText(originUrl)) return null;
 
         // 파일 조회 설정 정의

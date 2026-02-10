@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 @Builder
-public class DownloadUrlResponseDto {
+public class DownloadUrlDto {
     private Long fileId;
     private String downloadUrl;
     private String contentType;

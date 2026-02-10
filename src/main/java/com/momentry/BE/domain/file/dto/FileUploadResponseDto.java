@@ -8,9 +8,9 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 public class FileUploadResponseDto {
-    private List<UploadUrlResponseDto> uploadUrlList;
+    private List<UploadUrlDto> uploadUrlList;
 
-    public static FileUploadResponseDto of(List<UploadUrlResponseDto> uploadUrlList){
+    public static FileUploadResponseDto of(List<UploadUrlDto> uploadUrlList){
         return new FileUploadResponseDto(uploadUrlList);
     }
 }

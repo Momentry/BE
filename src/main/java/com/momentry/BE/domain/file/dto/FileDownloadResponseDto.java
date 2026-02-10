@@ -8,9 +8,5 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 public class FileDownloadResponseDto {
-    private List<DownloadUrlResponseDto> downloadUrlList;
-
-    public static FileDownloadResponseDto of(List<DownloadUrlResponseDto> downloadUrlList){
-        return new FileDownloadResponseDto(downloadUrlList);
-    }
+    private List<DownloadUrlDto> downloadUrlList;
 }

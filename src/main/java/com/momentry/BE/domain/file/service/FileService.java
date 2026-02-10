@@ -1,6 +1,5 @@
 package com.momentry.BE.domain.file.service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -53,7 +52,7 @@ public class FileService {
         // 유저 권한 체크
         albumPermissionService.checkPermission(uploaderId, albumId, MemberAlbumPermission.EDITOR);
 
-        List<UploadUrlResponseDto> uploadUrlList = new ArrayList<>();
+        List<UploadUrlDto> uploadUrlList = new ArrayList<>();
         for(UploadFileInfoDto fileInfo : getFileUploadUrlsRequestDtoList.getUploadFileInfoList()){
             // 각 파일에 uuid 부여
             String fileId = UUID.randomUUID().toString();
@@ -68,7 +67,7 @@ public class FileService {
             String uploadUrl = s3Util.generatePresignedUploadUrl(uploaderId, fileKey, fileInfo.getContentType());
 
             uploadUrlList.add(
-                    UploadUrlResponseDto.builder()
+                    UploadUrlDto.builder()
                             .fileNo(fileInfo.getFileNo())
                             .uploadUrl(uploadUrl)
                             .build()
@@ -89,11 +88,11 @@ public class FileService {
         List<File> fileList = fileRepository.findAllById(fileIdList);
 
         // 다운로드 URL 생성
-        List<DownloadUrlResponseDto> downloadUrlList = new ArrayList<>();
+        List<DownloadUrlDto> downloadUrlList = new ArrayList<>();
         for(File file : fileList){
-            String downloadUrl = s3Util.generatePresignedDownloadUrl(file.getOriginUrl(), file.getFileKey(), file.getContentType());
+            String downloadUrl = s3Util.generatePresignedDownloadUrl(file.getOriginUrl(), file.getContentType());
             downloadUrlList.add(
-                    DownloadUrlResponseDto.builder()
+                    DownloadUrlDto.builder()
                             .downloadUrl(downloadUrl)
                             .fileId(file.getId())
                             .contentType(file.getContentType())
@@ -101,7 +100,7 @@ public class FileService {
             );
         }
 
-        return FileDownloadResponseDto.of(downloadUrlList);
+        return new FileDownloadResponseDto(downloadUrlList);
     }
 
     @Transactional
