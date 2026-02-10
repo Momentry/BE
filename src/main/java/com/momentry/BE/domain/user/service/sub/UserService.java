@@ -1,5 +1,6 @@
 package com.momentry.BE.domain.user.service.sub;
 
+import com.momentry.BE.domain.user.dto.UpdateUserInfoRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -61,26 +62,18 @@ public class UserService {
     }
 
     // 정보 수정
-    public UserUpdateResponse update(Long userId, MultipartFile file, String newUsername){
+    public UserUpdateResponse update(Long userId, UpdateUserInfoRequest request){
         User currentUser = getCurrentUser(userId);
 
-        // 파일이 있으면 S3 업로드 및 프로필 이미지 URL 업데이트
-        // TODO : S3 업로드 기능 구현 시 적용할 예정
-        //        if (file != null && !file.isEmpty()) {
-        //             fileValidator.image(file);
-        //             String fileUrl = s3Util.upload(file, FileCategory.IMAGE);
-        //             user.setProfileImageUrl(fileUrl);
-        //        }
-
         // 닉네임이 있으면 업데이트
-        if (newUsername != null && !newUsername.trim().isEmpty()) {
-            currentUser.setUsername(newUsername);
+        if (request.getNewUsername() != null && !request.getNewUsername().trim().isEmpty()) {
+            currentUser.setUsername(request.getNewUsername());
         }
 
         // 업데이트 반영
         saveUser(currentUser);
 
-        return new UserUpdateResponse(currentUser.getUsername(), currentUser.getProfileImageUrl());
+        return new UserUpdateResponse(currentUser.getUsername());
     }
 
     // 사용자 조회 -> 없으면 회원 가입 -> 반환

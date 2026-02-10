@@ -1,5 +1,6 @@
 package com.momentry.BE.domain.user.controller;
 
+import com.momentry.BE.domain.user.dto.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,11 +15,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.momentry.BE.domain.user.dto.GetCurrentUserAlbumListResponse;
-import com.momentry.BE.domain.user.dto.GetCurrentUserFileListResponse;
-import com.momentry.BE.domain.user.dto.GetCurrentUserLikedFileListResponse;
-import com.momentry.BE.domain.user.dto.LoginResponse;
-import com.momentry.BE.domain.user.dto.UserUpdateResponse;
 import com.momentry.BE.domain.user.exception.MismatchUserException;
 import com.momentry.BE.domain.user.service.master.UserMasterService;
 import com.momentry.BE.global.dto.ApiResponse;
@@ -35,10 +31,9 @@ public class UserController {
     @PatchMapping("/{userId}")
     public ResponseEntity<ApiResponse<UserUpdateResponse>> update(
             @PathVariable Long userId,
-            @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestParam(value = "newUsername", required = false) String newUsername) {
+            @RequestBody() UpdateUserInfoRequest request) {
         validateSelf(userId);
-        UserUpdateResponse userUpdateResponse = userMasterService.updateUser(userId, file, newUsername);
+        UserUpdateResponse userUpdateResponse = userMasterService.updateUser(userId, request);
 
         return ApiResponse.ofSuccess(userUpdateResponse);
     }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.momentry.BE.domain.user.dto.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,11 +24,6 @@ import com.momentry.BE.domain.file.dto.LikedFileDto;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.repository.FileLikeRepository;
 import com.momentry.BE.domain.file.repository.FileRepository;
-import com.momentry.BE.domain.user.dto.GetCurrentUserAlbumListResponse;
-import com.momentry.BE.domain.user.dto.GetCurrentUserFileListResponse;
-import com.momentry.BE.domain.user.dto.GetCurrentUserLikedFileListResponse;
-import com.momentry.BE.domain.user.dto.LoginResponse;
-import com.momentry.BE.domain.user.dto.UserUpdateResponse;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.service.sub.AlertPreferenceService;
 import com.momentry.BE.domain.user.service.sub.UserService;
@@ -53,8 +49,8 @@ public class UserMasterService {
     private final FileLikeRepository fileLikeRepository;
 
     @Transactional
-    public UserUpdateResponse updateUser(Long userId, MultipartFile file, String newUsername) {
-        return userService.update(userId, file, newUsername);
+    public UserUpdateResponse updateUser(Long userId, UpdateUserInfoRequest request) {
+        return userService.update(userId, request);
     }
 
     // SOFT DELETE

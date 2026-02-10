@@ -2,9 +2,11 @@ package com.momentry.BE.domain.user.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @AllArgsConstructor
-public class UserUpdateResponse {
-    private String userName;
+@NoArgsConstructor
+public class UpdateUserInfoRequest {
+    private String newUsername;
 }
