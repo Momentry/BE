@@ -1,9 +1,22 @@
+# application.yml profile 설정
+spring:
+  profiles:
+    group:
+      local:
+        - common
+      prod:
+        - common
+
+---
+
 spring:
   servlet:
     multipart:
       max-file-size: 20MB     # 개별 파일당 최대 크기
       max-request-size: 100MB  # 한 요청당 합계 최대 크기
   config:
+    activate:
+      on-profile: common
     import:
       - optional:file:.env[.properties]
   threads:
@@ -72,7 +85,24 @@ aws:
 firebase:
   credentials-path: ${FIREBASE_CREDENTIALS_PATH:src/main/resources/serviceAccountKey.json}
 
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
 # 커스텀 값
 app:
   s3:
     upload-prefix: original/
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+
+# 커스텀 값
+app:
+  s3:
+    upload-prefix: test-original/
