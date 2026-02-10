@@ -1,6 +1,5 @@
 package com.momentry.BE.domain.file.service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -53,7 +52,7 @@ public class FileService {
         // 유저 권한 체크
         albumPermissionService.checkPermission(uploaderId, albumId, MemberAlbumPermission.EDITOR);
 
-        List<UploadUrlResponseDto> uploadUrlList = new ArrayList<>();
+        List<UploadUrlDto> uploadUrlList = new ArrayList<>();
         for(UploadFileInfoDto fileInfo : getFileUploadUrlsRequestDtoList.getUploadFileInfoList()){
             // 각 파일에 uuid 부여
             String fileId = UUID.randomUUID().toString();
@@ -68,7 +67,7 @@ public class FileService {
             String uploadUrl = s3Util.generatePresignedUploadUrl(uploaderId, fileKey, fileInfo.getContentType());
 
             uploadUrlList.add(
-                    UploadUrlResponseDto.builder()
+                    UploadUrlDto.builder()
                             .fileNo(fileInfo.getFileNo())
                             .uploadUrl(uploadUrl)
                             .build()
@@ -76,6 +75,32 @@ public class FileService {
         }
 
         return FileUploadResponseDto.of(uploadUrlList);
+    }
+
+    @Transactional
+    public FileDownloadResponseDto getFileDownloadUrls(Long downloaderId, Long albumId, FileDownloadRequestDto getFileDownloadUrlRequestDto ){
+        // 유저 권한 체크
+        albumPermissionService.checkPermission(downloaderId, albumId, MemberAlbumPermission.VIEWER);
+
+        List<Long> fileIdList = getFileDownloadUrlRequestDto.getDownloadFileIdList();
+
+        // 파일 조회
+        List<File> fileList = fileRepository.findAllById(fileIdList);
+
+        // 다운로드 URL 생성
+        List<DownloadUrlDto> downloadUrlList = new ArrayList<>();
+        for(File file : fileList){
+            String downloadUrl = s3Util.generatePresignedDownloadUrl(file.getOriginUrl(), file.getContentType());
+            downloadUrlList.add(
+                    DownloadUrlDto.builder()
+                            .downloadUrl(downloadUrl)
+                            .fileId(file.getId())
+                            .contentType(file.getContentType())
+                            .build()
+            );
+        }
+
+        return new FileDownloadResponseDto(downloadUrlList);
     }
 
     @Transactional
@@ -182,6 +207,7 @@ public class FileService {
                 .displayUrl(saveFileDto.getDisplayPath())
                 .fileType(saveFileDto.getFileType())
                 .metadata(saveFileDto.getMetadata())
+                .contentType(saveFileDto.getContentType())
                 .fileKey(saveFileDto.getFileKey())
                 .capturedAt(saveFileDto.getCapturedAt())
                 .build();
