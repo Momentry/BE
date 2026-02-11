@@ -8,5 +8,6 @@ import lombok.Getter;
 public class AlbumCreationResponse {
     private Long albumId;
     private String albumName;
-    private Boolean includeThumnail;
+    // 커버 이미지 업로드 시도 후 실패했을 때 true (기본 이미지 유지됨)
+    private Boolean coverUploadFailed;
 }
