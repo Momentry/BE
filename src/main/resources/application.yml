@@ -69,13 +69,13 @@ oauth:
 cloudfront:
   enabled: ${CF_ENABLED:false}
   secret-key: ${CF_SECRET_KEY:}
-  cookie-domain: ${CF_COOKIE_DOMAIN:https://d2y231bsfj38ut.cloudfront.net}
+  cookie-domain: ${CF_COOKIE_DOMAIN:https://cdn.momentry.p-e.kr}
   cookie-path: ${CF_COOKIE_PATH:/}
   cookie-ttl-seconds: ${CF_COOKIE_TTL:3600}
   secure: ${CF_COOKIE_SECURE:true}
   http-only: ${CF_COOKIE_HTTP_ONLY:true}
   same-site: ${CF_COOKIE_SAME_SITE:None}
-  url-prefix: ${CF_URL_PREFIX:https://d2y231bsfj38ut.cloudfront.net/album/}
+  url-prefix: ${CF_URL_PREFIX:https://cdn.momentry.p-e.kr/album/}
 
 aws:
   sqs:
