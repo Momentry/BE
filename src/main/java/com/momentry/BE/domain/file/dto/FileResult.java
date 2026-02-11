@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FileResult {    
     private Long id;
-    private String url;
     private String thumbnailUrl;
     private String displayUrl;
     private FileType fileType;
@@ -23,7 +22,6 @@ public class FileResult {
     public static FileResult of(File file) {
         return FileResult.builder()
                 .id(file.getId())
-                .url(file.getOriginUrl())
                 .displayUrl(file.getDisplayUrl())
                 .thumbnailUrl(file.getThumbUrl())
                 .fileType(file.getFileType())
