@@ -49,6 +49,19 @@ public class UserService {
         }
     }
 
+    public void updateFcmToken(User user, String fcmToken){
+        try{
+            if(fcmToken.isEmpty()){
+               return;
+            }
+            user.setFcmToken(fcmToken);
+            userRepository.save(user);
+        } catch(DataIntegrityViolationException e){
+            throw new DuplicateUserException();
+        }
+    }
+
+
     // 회원 탈퇴 - soft delete
     public void withdrawUser(User user) {
         user.setIsActive(false);

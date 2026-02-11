@@ -54,6 +54,9 @@ public class AuthMasterService {
             userService.restoreUser(user);
         }
 
+        // 2-2. fcmToken 업데이트
+        userService.updateFcmToken(user, request.getFcmToken());
+
         // 3. AlertPreference 조회 or 생성
         AlertPreference alertPreference = alertPreferenceService.getOrCreateAlertPreference(user);
 
