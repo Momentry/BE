@@ -48,20 +48,22 @@ public interface FileRepository extends JpaRepository<File, Long> {
                                     Pageable pageable);
 
     @Query("""
-            SELECT f FROM File f
-            WHERE f.album.id IN :albumIds
-            ORDER BY f.createdAt DESC, f.id DESC
-            """)
+        SELECT f FROM File f
+        JOIN FETCH f.album
+        WHERE f.album.id IN :albumIds
+        ORDER BY f.createdAt DESC, f.id DESC
+        """)
     List<File> findByAlbumIdsOrderByCreatedAtDescIdDesc(@Param("albumIds") List<Long> albumIds,
                                                         Pageable pageable);
 
     @Query("""
-            SELECT f FROM File f
-            WHERE f.album.id IN :albumIds
-              AND (f.createdAt < :cursorCreatedAt
-                   OR (f.createdAt = :cursorCreatedAt AND f.id < :cursorId))
-            ORDER BY f.createdAt DESC, f.id DESC
-            """)
+        SELECT f FROM File f
+        JOIN FETCH f.album
+        WHERE f.album.id IN :albumIds
+          AND (f.createdAt < :cursorCreatedAt
+               OR (f.createdAt = :cursorCreatedAt AND f.id < :cursorId))
+        ORDER BY f.createdAt DESC, f.id DESC
+        """)
     List<File> findByAlbumIdsWithCursor(@Param("albumIds") List<Long> albumIds,
                                         @Param("cursorCreatedAt") java.time.LocalDateTime cursorCreatedAt,
                                         @Param("cursorId") Long cursorId,
