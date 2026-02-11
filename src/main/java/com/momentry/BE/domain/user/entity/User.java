@@ -37,6 +37,7 @@ public class User {
     @Column(columnDefinition = "TEXT")
     private String profileImageUrl;
 
+    @Setter
     @Column(columnDefinition = "TEXT")
     private String fcmToken;
 
