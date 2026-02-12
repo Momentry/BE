@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import com.momentry.BE.global.event.dto.AlbumCreateEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -65,6 +67,8 @@ public class AlbumService {
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     // 나중에 s3에서 가져오도록 변경 필요
     private static final String DEFAULT_COVER_IMAGE_URL = "https://images.unsplash.com/photo-1511497584788-876760111969?w=800";
 
@@ -114,6 +118,10 @@ public class AlbumService {
                 .build();
 
         albumMemberRepository.save(albumMember);
+
+        // fcm 메세지 전송 - 이벤트 발행
+        AlbumCreateEvent event = new AlbumCreateEvent(user.getId(), album.getId(), album.getName());
+        eventPublisher.publishEvent(event);
 
         return new AlbumCreationResponse(savedAlbum.getId(), savedAlbum.getName(), includeThumnail);
     }
