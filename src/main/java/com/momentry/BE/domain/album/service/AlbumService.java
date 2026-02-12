@@ -361,7 +361,7 @@ public class AlbumService {
      * @param albumId 앨범 ID
      * @return Album
      */
-    private Album getAlbum(Long albumId) {
+    public Album getAlbum(Long albumId) {
         return albumRepository.findById(albumId)
                 .orElseThrow(AlbumNotFoundException::new);
     }
@@ -430,6 +430,10 @@ public class AlbumService {
                 .map(AlbumMemberResult::of)
                 .toList();
         return new AlbumMemberResponse(memberCount, albumMemberResults);
+    }
+
+    public List<String> getAlbumMemberFcmTokens(Long albumId){
+        return albumMemberRepository.findTokensByAlbumId(albumId);
     }
 
     /**
