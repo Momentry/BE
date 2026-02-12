@@ -25,7 +25,7 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class MomentryEventListener {
+public class FcmEventListener {
 
     // TODO : 추후 multi device 환경에서의 개선 필요
     private final UserService userService;
