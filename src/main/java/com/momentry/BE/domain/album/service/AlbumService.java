@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import com.momentry.BE.global.event.dto.AlbumCreateEvent;
+import com.momentry.BE.global.event.dto.AlbumInviteEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
@@ -303,6 +304,10 @@ public class AlbumService {
                     invitee.getUsername(),
                     invitee.getProfileImageUrl()));
         }
+
+        List<Long> invitedUserIds = users.stream().map(User::getId).toList();
+        AlbumInviteEvent event = new AlbumInviteEvent(invitedUserIds, album.getId(), album.getName());
+        eventPublisher.publishEvent(event);
 
         return new AlbumMemberInviteResult(album.getId(), invitedResults);
     }

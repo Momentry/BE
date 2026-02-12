@@ -22,6 +22,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findActiveUserById(Long userId);
 
     @Query("""
+            SELECT u
+            FROM User u
+            WHERE u.isActive = true
+            AND u.id IN :userIds
+            """)
+    List<User> findAllActiveUserById(List<Long> userIds);
+
+    @Query("""
         SELECT u
         FROM User u
         WHERE u.isActive = true
