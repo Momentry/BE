@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -86,6 +87,9 @@ class AlbumServiceTest {
     @Mock
     private CoverImageResolver coverImageResolver;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private AlbumService albumService;
     private Album album;
     private AlbumMember albumMember;
@@ -93,7 +97,8 @@ class AlbumServiceTest {
     @BeforeEach
     void setUp() {
         albumService = new AlbumService(albumRepository, albumTagRepository, albumMemberRepository,
-                fileTagInfoRepository, fileRepository, userRepository, fileUtil, s3Util, coverImageResolver);
+                fileTagInfoRepository,
+                fileRepository, userRepository, fileUtil, s3Util, coverImageResolver, eventPublisher);
         album = Album.builder().name("test").build();
         AccountPlan plan = AccountPlan.builder().plan("FREE").build();
         User user = User.builder().email("a@b.com").username("user").accountPlan(plan).build();

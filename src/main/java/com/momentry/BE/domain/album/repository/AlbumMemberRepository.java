@@ -30,6 +30,9 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
     @Query("SELECT am.album FROM AlbumMember am WHERE am.user.id = :userId")
     List<Album> findAlbumsByUserId(Long userId);
 
+    @Query("SELECT COUNT(am) > 0 FROM AlbumMember am WHERE am.album.name = :albumName AND am.user.id = :userId")
+    boolean existsByAlbumNameAndUserId(@Param("albumName") String albumName, @Param("userId") Long userId);
+
     @Query("SELECT am.album.id FROM AlbumMember am WHERE am.user.id = :userId")
     List<Long> findAlbumIdsByUserId(Long userId);
 
@@ -48,12 +51,12 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
     Optional<MemberAlbumPermission> findPermissionByAlbumIdAndUserId(Long albumId, Long userId);
 
     @Query("""
-        SELECT u.fcmToken
-        FROM AlbumMember am
-        JOIN am.user u
-        WHERE am.album.id = :albumId
-        AND u.isActive = true
-        AND u.fcmToken IS NOT NULL
-        """)
+            SELECT u.fcmToken
+            FROM AlbumMember am
+            JOIN am.user u
+            WHERE am.album.id = :albumId
+            AND u.isActive = true
+            AND u.fcmToken IS NOT NULL
+            """)
     List<String> findTokensByAlbumId(@Param("albumId") Long albumId);
 }

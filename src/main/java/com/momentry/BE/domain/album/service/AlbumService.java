@@ -121,9 +121,9 @@ public class AlbumService {
             return true;
         }
     }
+
     private final ApplicationEventPublisher eventPublisher;
 
-    
     /**
      * 앨범 생성
      * 
@@ -140,8 +140,8 @@ public class AlbumService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-        // 앨범 이름 중복 체크
-        if (albumRepository.findByName(albumName).isPresent()) {
+        // 앨범 이름 중복 체크 (내가 멤버인 앨범 안에서만)
+        if (albumMemberRepository.existsByAlbumNameAndUserId(albumName, userId)) {
             throw new DuplicateAlbumNameException();
         }
 
@@ -165,7 +165,6 @@ public class AlbumService {
         // 2~4. 커버 이미지가 있으면 업로드 시도, 성공 시 coverUrl 갱신, 실패 시 기본 이미지 유지 + 응답에 표시
         boolean coverUploadFailed = tryUploadCoverImage(savedAlbum, coverImage);
 
-
         // fcm 메세지 전송 - 이벤트 발행
         AlbumCreateEvent event = new AlbumCreateEvent(user.getId(), album.getId(), album.getName());
         eventPublisher.publishEvent(event);
@@ -174,6 +173,7 @@ public class AlbumService {
                 savedAlbum.getId(),
                 savedAlbum.getName(),
                 coverUploadFailed);
+    }
 
     /**
      * 앨범 정보 수정
@@ -475,7 +475,7 @@ public class AlbumService {
         return new AlbumMemberResponse(memberCount, albumMemberResults);
     }
 
-    public List<String> getAlbumMemberFcmTokens(Long albumId){
+    public List<String> getAlbumMemberFcmTokens(Long albumId) {
         return albumMemberRepository.findTokensByAlbumId(albumId);
     }
 
