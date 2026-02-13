@@ -89,7 +89,7 @@ aws:
     queue-name: ${AWS_SQS_FILE_PROCESSED_QUEUE}
 
 firebase:
-  credentials-path: ${FIREBASE_CREDENTIALS_PATH:src/main/resources/serviceAccountKey.json}
+  credentials: ${FIREBASE_CREDENTIALS:}
 
 ---
 spring:

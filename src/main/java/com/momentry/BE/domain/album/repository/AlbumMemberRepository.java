@@ -46,4 +46,14 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
     @Query("SELECT am.permission FROM AlbumMember am " +
             "WHERE am.album.id = :albumId AND am.user.id = :userId")
     Optional<MemberAlbumPermission> findPermissionByAlbumIdAndUserId(Long albumId, Long userId);
+
+    @Query("""
+        SELECT u.fcmToken
+        FROM AlbumMember am
+        JOIN am.user u
+        WHERE am.album.id = :albumId
+        AND u.isActive = true
+        AND u.fcmToken IS NOT NULL
+        """)
+    List<String> findTokensByAlbumId(@Param("albumId") Long albumId);
 }

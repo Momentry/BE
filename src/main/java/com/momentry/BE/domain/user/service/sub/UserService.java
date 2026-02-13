@@ -20,6 +20,8 @@ import com.momentry.BE.security.util.SecurityUtil;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -29,6 +31,16 @@ public class UserService {
     // base method - read
     public User getUser(Long userId){
         return userRepository.findActiveUserById(userId).orElseThrow(UserNotFoundException::new);
+    }
+
+    public List<User> getUsers(List<Long> userIds){
+        List<User> users = userRepository.findAllActiveUserById(userIds);
+
+        if(users.size() != userIds.size()){
+            throw new UserNotFoundException();
+        }
+
+        return users;
     }
 
     public User getCurrentUser(Long userId){
@@ -48,6 +60,19 @@ public class UserService {
             throw new DuplicateUserException();
         }
     }
+
+    public void updateFcmToken(User user, String fcmToken){
+        try{
+            if(fcmToken.isEmpty()){
+               return;
+            }
+            user.setFcmToken(fcmToken);
+            userRepository.save(user);
+        } catch(DataIntegrityViolationException e){
+            throw new DuplicateUserException();
+        }
+    }
+
 
     // 회원 탈퇴 - soft delete
     public void withdrawUser(User user) {

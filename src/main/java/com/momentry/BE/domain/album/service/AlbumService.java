@@ -11,6 +11,9 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Value;
+import com.momentry.BE.global.event.dto.AlbumCreateEvent;
+import com.momentry.BE.global.event.dto.AlbumInviteEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -118,7 +121,9 @@ public class AlbumService {
             return true;
         }
     }
+    private final ApplicationEventPublisher eventPublisher;
 
+    
     /**
      * 앨범 생성
      * 
@@ -160,11 +165,15 @@ public class AlbumService {
         // 2~4. 커버 이미지가 있으면 업로드 시도, 성공 시 coverUrl 갱신, 실패 시 기본 이미지 유지 + 응답에 표시
         boolean coverUploadFailed = tryUploadCoverImage(savedAlbum, coverImage);
 
+
+        // fcm 메세지 전송 - 이벤트 발행
+        AlbumCreateEvent event = new AlbumCreateEvent(user.getId(), album.getId(), album.getName());
+        eventPublisher.publishEvent(event);
+
         return new AlbumCreationResponse(
                 savedAlbum.getId(),
                 savedAlbum.getName(),
                 coverUploadFailed);
-    }
 
     /**
      * 앨범 정보 수정
@@ -339,6 +348,10 @@ public class AlbumService {
                     invitee.getProfileImageUrl()));
         }
 
+        List<Long> invitedUserIds = users.stream().map(User::getId).toList();
+        AlbumInviteEvent event = new AlbumInviteEvent(invitedUserIds, album.getId(), album.getName());
+        eventPublisher.publishEvent(event);
+
         return new AlbumMemberInviteResult(album.getId(), invitedResults);
     }
 
@@ -391,7 +404,7 @@ public class AlbumService {
      * @param albumId 앨범 ID
      * @return Album
      */
-    private Album getAlbum(Long albumId) {
+    public Album getAlbum(Long albumId) {
         return albumRepository.findById(albumId)
                 .orElseThrow(AlbumNotFoundException::new);
     }
@@ -460,6 +473,10 @@ public class AlbumService {
                 .map(AlbumMemberResult::of)
                 .toList();
         return new AlbumMemberResponse(memberCount, albumMemberResults);
+    }
+
+    public List<String> getAlbumMemberFcmTokens(Long albumId){
+        return albumMemberRepository.findTokensByAlbumId(albumId);
     }
 
     /**
