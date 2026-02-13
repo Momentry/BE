@@ -15,6 +15,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.momentry.BE.domain.album.dto.AlbumCreationResponse;
 import com.momentry.BE.domain.album.dto.AlbumDetailResponse;
@@ -88,7 +89,7 @@ public class AlbumService {
      * @param coverImage 업로드할 파일 (null/empty면 아무 것도 안 함)
      * @return 업로드 시도 후 실패했으면 true, 성공이거나 업로드 시도 안 했으면 false
      */
-    private boolean tryUploadCoverImage(Album album, org.springframework.web.multipart.MultipartFile coverImage) {
+    private boolean tryUploadCoverImage(Album album, MultipartFile coverImage) {
         if (coverImage == null || coverImage.isEmpty()) {
             return false;
         }
@@ -128,7 +129,7 @@ public class AlbumService {
      */
     @Transactional
     public AlbumCreationResponse createAlbum(String albumName,
-            org.springframework.web.multipart.MultipartFile coverImage, Long userId) {
+            MultipartFile coverImage, Long userId) {
 
         // 사용자 조회
         User user = userRepository.findById(userId)
@@ -174,7 +175,7 @@ public class AlbumService {
      * @param userId     사용자 ID
      */
     @Transactional
-    public void updateAlbum(Long albumId, String albumName, org.springframework.web.multipart.MultipartFile coverImage,
+    public void updateAlbum(Long albumId, String albumName, MultipartFile coverImage,
             Long userId) {
         // 권한 확인 (편집 권한 필요)
         AlbumMember albumMember = getAlbumPermission(albumId, userId);
