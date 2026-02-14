@@ -1,5 +1,6 @@
 package com.momentry.BE.domain.album.service;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -35,5 +36,10 @@ public class AlbumTagService {
             // 앨범에 속하지 않은 태그가 포함 되어 있음
             throw new InvalidTagException();
         }
+    }
+
+    @Transactional
+    public void updateTagCount(Collection<Long> tagIds){
+        albumTagRepository.updateCounts(tagIds);
     }
 }

@@ -1,10 +1,12 @@
 package com.momentry.BE.domain.album.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -45,4 +47,9 @@ public interface AlbumTagRepository extends JpaRepository<AlbumTag, Long> {
             @Param("cursorId") Long cursorId,
             Pageable pageable);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE AlbumTag t SET t.count = " +
+            "(SELECT COUNT(ft) FROM FileTagInfo ft WHERE ft.tag.id = t.id) " +
+            "WHERE t.id IN :tagIds")
+    void updateCounts(@Param("tagIds") Collection<Long> tagIds);
 }
