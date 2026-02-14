@@ -60,6 +60,7 @@ import com.momentry.BE.global.util.S3Util;
 import com.momentry.BE.domain.file.util.FileUtil;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.repository.UserRepository;
+import com.momentry.BE.domain.user.service.sub.UserService;
 import com.momentry.BE.global.dto.FileCursor;
 import com.momentry.BE.global.exception.CursorDecodeFailException;
 import com.momentry.BE.global.util.CursorUtil;
@@ -82,6 +83,7 @@ public class AlbumService {
     private final S3Util s3Util;
     private final CoverImageResolver coverImageResolver;
     private final CoverImageS3KeyValidator coverImageS3KeyValidator;
+    private final UserService userService;
 
     /**
      * 커버 이미지 S3에 업로드, DB 갱신
@@ -137,8 +139,7 @@ public class AlbumService {
             MultipartFile coverImage, Long userId) {
 
         // 사용자 조회
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        User user = userService.getUser(userId);
 
         if (!StringUtils.hasText(albumName)) {
             throw new IllegalArgumentException("앨범 이름은 필수입니다.");
