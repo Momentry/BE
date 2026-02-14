@@ -56,12 +56,13 @@ public class FileService {
     private String FILEKEY_PREFIX;
 
     @Transactional
-    public FileUploadResponseDto getFileUploadUrls(Long uploaderId, Long albumId, FileUploadRequestDto getFileUploadUrlsRequestDtoList){
+    public FileUploadResponseDto getFileUploadUrls(Long uploaderId, Long albumId,
+            FileUploadRequestDto getFileUploadUrlsRequestDtoList) {
         // 유저 권한 체크
         albumPermissionService.checkPermission(uploaderId, albumId, MemberAlbumPermission.EDITOR);
 
         List<UploadUrlDto> uploadUrlList = new ArrayList<>();
-        for(UploadFileInfoDto fileInfo : getFileUploadUrlsRequestDtoList.getUploadFileInfoList()){
+        for (UploadFileInfoDto fileInfo : getFileUploadUrlsRequestDtoList.getUploadFileInfoList()) {
             // 각 파일에 uuid 부여
             String fileId = UUID.randomUUID().toString();
 
@@ -78,15 +79,15 @@ public class FileService {
                     UploadUrlDto.builder()
                             .fileNo(fileInfo.getFileNo())
                             .uploadUrl(uploadUrl)
-                            .build()
-            );
+                            .build());
         }
 
         return FileUploadResponseDto.of(uploadUrlList);
     }
 
     @Transactional
-    public FileDownloadResponseDto getFileDownloadUrls(Long downloaderId, Long albumId, FileDownloadRequestDto getFileDownloadUrlRequestDto ){
+    public FileDownloadResponseDto getFileDownloadUrls(Long downloaderId, Long albumId,
+            FileDownloadRequestDto getFileDownloadUrlRequestDto) {
         // 유저 권한 체크
         albumPermissionService.checkPermission(downloaderId, albumId, MemberAlbumPermission.VIEWER);
 
@@ -97,15 +98,14 @@ public class FileService {
 
         // 다운로드 URL 생성
         List<DownloadUrlDto> downloadUrlList = new ArrayList<>();
-        for(File file : fileList){
+        for (File file : fileList) {
             String downloadUrl = s3Util.generatePresignedDownloadUrl(file.getOriginUrl(), file.getContentType());
             downloadUrlList.add(
                     DownloadUrlDto.builder()
                             .downloadUrl(downloadUrl)
                             .fileId(file.getId())
                             .contentType(file.getContentType())
-                            .build()
-            );
+                            .build());
         }
 
         return new FileDownloadResponseDto(downloadUrlList);
@@ -113,7 +113,8 @@ public class FileService {
 
     @Transactional
     public void deleteFiles(Long userId, Long albumId, List<Long> targetFileIds) {
-        if(targetFileIds.isEmpty()) return;
+        if (targetFileIds.isEmpty())
+            return;
 
         // 해당 앨범의 EDITOR 이상 권한이 있어야 삭제 가능
         albumPermissionService.checkPermission(userId, albumId, MemberAlbumPermission.EDITOR);
@@ -126,7 +127,7 @@ public class FileService {
             // TODO: 해당 파일이 진짜 그 앨범 소속이 맞는지 체크?
 
             // S3에서 삭제
-            s3Util.deleteAll(targetFile);
+            s3Util.deleteS3ObjectsForFile(targetFile);
         }
         // TODO: DDL 레벨에서 Cascade 옵션 주기 (일단은 수동으로 지우는걸로 대체 -> 테이블을 다시 만들어야해서!)
         // DB에서 파일 정보 일괄 삭제
@@ -200,8 +201,7 @@ public class FileService {
 
     @Transactional
     public void saveFileInfo(
-            SaveFileDto saveFileDto
-    ) {
+            SaveFileDto saveFileDto) {
         // 유저, 앨범 프록시 객체 생성
         User uploader = userRepository.getReferenceById(saveFileDto.getUploaderId());
         Album album = albumRepository.getReferenceById(saveFileDto.getAlbumId());

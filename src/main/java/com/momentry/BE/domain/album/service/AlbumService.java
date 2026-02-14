@@ -265,10 +265,11 @@ public class AlbumService {
             fileTagInfoRepository.deleteByTag(tag);
         }
 
-        // 관련 파일 삭제
-        List<File> files = fileRepository.findByAlbumOrderByCreatedAtDescIdDesc(album,
-                PageRequest.of(0, Integer.MAX_VALUE));
-        fileRepository.deleteAll(files);
+        // DB에서 해당 앨범의 파일 레코드 일괄 삭제
+        fileRepository.deleteByAlbum(album);
+
+        // S3 파일 삭제 (albumId 기준: albumId/..., original/albumId/...)
+        s3Util.deleteAllByAlbumPrefix(album.getId());
 
         // 앨범 삭제 (cascade로 태그와 멤버도 함께 삭제됨)
         albumRepository.delete(album);

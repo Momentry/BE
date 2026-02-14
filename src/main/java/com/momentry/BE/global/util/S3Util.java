@@ -11,6 +11,8 @@ import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -39,6 +41,9 @@ public class S3Util {
 
     @Value("${spring.cloud.aws.region.static}")
     private String region;
+
+    @Value("${app.s3.upload-prefix:original/}")
+    private String originalKeyPrefix;
 
     public void upload(String key, InputStream is, long contentLength) {
         upload(key, is, contentLength, null);
@@ -90,6 +95,53 @@ public class S3Util {
                 .key(key)
                 .build();
         s3Client.deleteObject(deleteObjectRequest);
+    }
+
+    /**
+     * 앨범에 속한 모든 S3 객체를 albumId 기준 prefix로 일괄 삭제
+     * - bucket/albumId/... → thumbnail, display, cover-image
+     * - bucket/original/albumId/... → original
+     *
+     * @param albumId 앨범 ID
+     */
+    public void deleteAllByAlbumPrefix(Long albumId) {
+        String albumPrefix = albumId + "/";
+        deleteAllByPrefix(albumPrefix);
+        deleteAllByPrefix(originalKeyPrefix + albumPrefix);
+    }
+
+    // 주어진 prefix로 시작하는 모든 S3 객체를 조회 후 배치 삭제
+    private void deleteAllByPrefix(String prefix) {
+        String nextToken = null; // 다음 페이지(1000개 단위) 토큰
+        do {
+            // prefix로 시작하는 객체 목록 요청
+            ListObjectsV2Request listRequest = ListObjectsV2Request.builder()
+                    .bucket(bucketName)
+                    .prefix(prefix)
+                    .continuationToken(nextToken)
+                    .build();
+
+            // 응답 받은 객체 목록 (S3가 알아서 1000개 단위로 잘라서 줌)
+            ListObjectsV2Response response = s3Client.listObjectsV2(listRequest);
+            // 빈 리스트가 응답으로 오면 (해당 prefix로 시작하는 객체가 없는 경우) 종료
+            if (response.contents().isEmpty()) {
+                break;
+            }
+            // 키만 추출 (삭제 API는 키만 받음)
+            List<ObjectIdentifier> identifiers = response.contents().stream()
+                    .map(obj -> ObjectIdentifier.builder().key(obj.key()).build())
+                    .toList();
+            try {
+                s3Client.deleteObjects(DeleteObjectsRequest.builder()
+                        .bucket(bucketName)
+                        .delete(Delete.builder().objects(identifiers).build())
+                        .build());
+            } catch (Exception e) {
+                log.error("S3 prefix 삭제 실패 (prefix={}): {}", prefix, e.getMessage());
+            }
+            // 다음 페이지 토큰 갱신
+            nextToken = response.nextContinuationToken();
+        } while (nextToken != null && !nextToken.isBlank());
     }
 
     public String generatePresignedUrl(String fileKey) {
