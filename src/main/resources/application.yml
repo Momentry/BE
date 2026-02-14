@@ -1,7 +1,10 @@
 # application.yml profile 설정
+# default(local 실행 시 프로필 미지정)에서도 common 설정(jwt, db 등) 로드
 spring:
   profiles:
     group:
+      default:
+        - common
       local:
         - common
       prod:
@@ -76,6 +79,10 @@ cloudfront:
   http-only: ${CF_COOKIE_HTTP_ONLY:true}
   same-site: ${CF_COOKIE_SAME_SITE:None}
   url-prefix: ${CF_URL_PREFIX:https://d2y231bsfj38ut.cloudfront.net/album/}
+  # public/*: 기본/공용 리소스 (서명 X) — CloudFront 콘솔에서 behavior 추가 시 사용
+  public-url-prefix: ${CF_PUBLIC_URL_PREFIX:https://d2y231bsfj38ut.cloudfront.net/public/}
+  # 기본 앨범 커버 파일명 (S3 public/default-album-cover-img.jpeg → public-url-prefix + 이 값)
+  default-cover-filename: ${CF_DEFAULT_COVER_FILENAME:default-album-cover-img.jpeg}
 
 aws:
   sqs:
@@ -94,6 +101,7 @@ spring:
 app:
   s3:
     upload-prefix: original/
+    cover-image-folder: cover-image/
 
 ---
 spring:

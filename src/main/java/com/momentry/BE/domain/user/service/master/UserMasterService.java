@@ -19,6 +19,7 @@ import com.momentry.BE.domain.album.dto.AlbumUrlDto;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
 import com.momentry.BE.domain.album.service.AlbumService;
+import com.momentry.BE.domain.album.util.CoverImageResolver;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.dto.LikedFileDto;
 import com.momentry.BE.domain.file.entity.File;
@@ -41,6 +42,7 @@ public class UserMasterService {
     private final UserService userService;
     private final AlertPreferenceService alertPreferenceService;
     private final AlbumService albumService;
+    private final CoverImageResolver coverImageResolver;
     private final CloudFrontSignedCookieService cloudFrontSignedCookieService;
 
     // TODO : 나중에 서비스 레이어가 나오면 교체하기
@@ -73,7 +75,6 @@ public class UserMasterService {
         List<Long> albumIds = albumService.getAlbumIds(user);
         cloudFrontSignedCookieService.addSignedCookieHeaders(response, user.getId(), albumIds);
     }
-
 
     @Transactional(readOnly = true)
     public GetCurrentUserAlbumListResponse getCurrentUserAlbums(Long userId) {
@@ -115,7 +116,7 @@ public class UserMasterService {
             return AlbumHeaderDto.builder()
                     .albumId(albumId)
                     .albumName(album.getName())
-                    .thumbnailUrl(album.getCoverImageUrl())
+                    .thumbnailUrl(coverImageResolver.resolve(album.getCoverImageUrl()))
                     .memberCount(memberCountMap.getOrDefault(albumId, 0))
                     .fileCount(fileCountMap.getOrDefault(albumId, 0))
                     .memberProfiles(profiles)

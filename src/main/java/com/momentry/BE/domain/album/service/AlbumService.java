@@ -1,11 +1,13 @@
 package com.momentry.BE.domain.album.service;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 import com.momentry.BE.global.event.dto.AlbumCreateEvent;
@@ -15,6 +17,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.momentry.BE.domain.album.dto.AlbumCreationResponse;
 import com.momentry.BE.domain.album.dto.AlbumDetailResponse;
@@ -42,23 +46,31 @@ import com.momentry.BE.domain.album.exception.TagNotFoundException;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
 import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.repository.AlbumTagRepository;
+import com.momentry.BE.domain.album.util.CoverImageResolver;
+import com.momentry.BE.domain.album.util.CoverImageS3KeyValidator;
 import com.momentry.BE.domain.file.dto.FilePageResult;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.dto.TagThumbnailRowDto;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileTagInfo;
+import com.momentry.BE.domain.file.exception.InvalidFileTypeException;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import com.momentry.BE.domain.file.repository.FileTagInfoRepository;
+import com.momentry.BE.global.util.S3Util;
+import com.momentry.BE.domain.file.util.FileUtil;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.repository.UserRepository;
+import com.momentry.BE.domain.user.service.sub.UserService;
 import com.momentry.BE.global.dto.FileCursor;
 import com.momentry.BE.global.exception.CursorDecodeFailException;
 import com.momentry.BE.global.util.CursorUtil;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AlbumService {
 
     private final AlbumRepository albumRepository;
@@ -67,11 +79,52 @@ public class AlbumService {
     private final FileTagInfoRepository fileTagInfoRepository;
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
+    private final FileUtil fileUtil;
+    private final S3Util s3Util;
+    private final CoverImageResolver coverImageResolver;
+    private final CoverImageS3KeyValidator coverImageS3KeyValidator;
+    private final UserService userService;
+
+    /**
+     * 커버 이미지 S3에 업로드, DB 갱신
+     *
+     * @param album      갱신할 앨범 (id 있음)
+     * @param coverImage 업로드할 파일 (null/empty면 아무 것도 안 함)
+     * @return 업로드 시도 후 실패했으면 true, 성공이거나 업로드 시도 안 했으면 false
+     */
+    private boolean tryUploadCoverImage(Album album, MultipartFile coverImage) {
+        if (coverImage == null || coverImage.isEmpty()) {
+            return false;
+        }
+        if (!fileUtil.isAllowedCoverImageType(coverImage.getContentType())) {
+            throw new InvalidFileTypeException();
+        }
+        // 앨범당 커버는 하나만 유지
+        // S3 key일 때만 S3 객체 삭제 (URL 혹은 이상한 값은 스킵)
+        String currentCover = album.getCoverImageUrl();
+        if (coverImageS3KeyValidator.isS3KeyFormat(currentCover)) {
+            try {
+                s3Util.delete(currentCover);
+            } catch (Exception e) {
+                log.warn("기존 커버 이미지 S3 삭제 실패 (albumId={}, key={})", album.getId(), currentCover, e);
+            }
+        }
+
+        String fileId = UUID.randomUUID().toString();
+        String extension = fileUtil.getExtension(coverImage.getContentType());
+        String fileKey = album.getId() + "/" + coverImageS3KeyValidator.getCoverImageFolder() + fileId + extension;
+        try {
+            s3Util.upload(fileKey, coverImage.getInputStream(), coverImage.getSize(), coverImage.getContentType());
+            album.setCoverImageUrl(fileKey);
+            albumRepository.save(album);
+            return false;
+        } catch (IOException e) {
+            log.warn("커버 이미지 업로드 실패, 기존 이미지 유지 (albumId={})", album.getId(), e);
+            return true;
+        }
+    }
 
     private final ApplicationEventPublisher eventPublisher;
-
-    // 나중에 s3에서 가져오도록 변경 필요
-    private static final String DEFAULT_COVER_IMAGE_URL = "https://images.unsplash.com/photo-1511497584788-876760111969?w=800";
 
     /**
      * 앨범 생성
@@ -83,30 +136,23 @@ public class AlbumService {
      */
     @Transactional
     public AlbumCreationResponse createAlbum(String albumName,
-            org.springframework.web.multipart.MultipartFile coverImage, Long userId) {
-        // 앨범 이름 중복 체크
-        if (albumRepository.findByName(albumName).isPresent()) {
+            MultipartFile coverImage, Long userId) {
+
+        // 사용자 조회
+        User user = userService.getUser(userId);
+
+        if (!StringUtils.hasText(albumName)) {
+            throw new IllegalArgumentException("앨범 이름은 필수입니다.");
+        }
+        // 앨범 이름 중복 체크 (내가 멤버인 앨범 안에서만)
+        if (albumMemberRepository.existsByAlbumNameAndUserId(albumName, userId)) {
             throw new DuplicateAlbumNameException();
         }
 
-        // 사용자 조회
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        // 커버 이미지 URL 설정
-        String finalCoverImageUrl = DEFAULT_COVER_IMAGE_URL;
-        Boolean includeThumnail = false;
-        if (coverImage != null && !coverImage.isEmpty()) {
-            includeThumnail = true;
-            // S3 업로드 서비스 구현 시 여기서 파일 업로드 처리
-            // finalCoverImageUrl = s3UploadService.uploadFile(coverImage);
-            // 현재는 파일이 있어도 업로드하지 않고 default 이미지 사용
-        }
-
-        // 앨범 생성
+        // 1. 앨범 레코드 생성 (커버 없음 = 기본 이미지, DB에는 null 저장)
         Album album = Album.builder()
                 .name(albumName)
-                .coverImageUrl(finalCoverImageUrl)
+                .coverImageUrl(null)
                 .build();
 
         Album savedAlbum = albumRepository.save(album);
@@ -120,11 +166,18 @@ public class AlbumService {
 
         albumMemberRepository.save(albumMember);
 
+        // 2~4. 커버 이미지가 있으면 업로드 시도, 성공 시 coverUrl 갱신, 실패 시 기본 이미지 유지 + 응답에 표시
+        // 커버 이미지는 null 혹은 s3 key만 저장됨 (이상한 문자열, 링크, 경로 등은 저장되지 않음)
+        boolean coverUploadFailed = tryUploadCoverImage(savedAlbum, coverImage);
+
         // fcm 메세지 전송 - 이벤트 발행
         AlbumCreateEvent event = new AlbumCreateEvent(user.getId(), album.getId(), album.getName());
         eventPublisher.publishEvent(event);
 
-        return new AlbumCreationResponse(savedAlbum.getId(), savedAlbum.getName(), includeThumnail);
+        return new AlbumCreationResponse(
+                savedAlbum.getId(),
+                savedAlbum.getName(),
+                coverUploadFailed);
     }
 
     /**
@@ -136,7 +189,7 @@ public class AlbumService {
      * @param userId     사용자 ID
      */
     @Transactional
-    public void updateAlbum(Long albumId, String albumName, org.springframework.web.multipart.MultipartFile coverImage,
+    public void updateAlbum(Long albumId, String albumName, MultipartFile coverImage,
             Long userId) {
         // 권한 확인 (편집 권한 필요)
         AlbumMember albumMember = getAlbumPermission(albumId, userId);
@@ -146,25 +199,16 @@ public class AlbumService {
         Album album = albumRepository.findById(albumId)
                 .orElseThrow(AlbumNotFoundException::new);
 
-        // 앨범 이름 업데이트 (제공된 경우)
-        if (albumName != null && !albumName.isBlank()) {
-            // 다른 앨범과 이름 중복 체크 (자기 자신은 제외)
-            albumRepository.findByName(albumName)
-                    .ifPresent(existingAlbum -> {
-                        if (!existingAlbum.getId().equals(albumId)) {
-                            throw new DuplicateAlbumNameException();
-                        }
-                    });
+        // 앨범 이름 업데이트 (제공된 경우에만, null/공백이면 스킵)
+        if (StringUtils.hasText(albumName)) {
+            if (albumMemberRepository.existsByAlbumNameAndUserId(albumName, userId)) {
+                throw new DuplicateAlbumNameException();
+            }
             album.setName(albumName);
         }
 
-        // 커버 이미지 업데이트 (제공된 경우)
-        if (coverImage != null && !coverImage.isEmpty()) {
-            // S3 업로드 서비스 구현 시 여기서 파일 업로드 처리
-            // String coverImageUrl = s3UploadService.uploadFile(coverImage);
-            // album.setCoverImageUrl(coverImageUrl);
-            // 현재는 파일이 있어도 업로드하지 않고 기존 이미지 유지
-        }
+        // 커버 이미지 업데이트 (제공된 경우) — 실패 시 기존 이미지 유지
+        tryUploadCoverImage(album, coverImage);
 
         albumRepository.save(album);
     }
@@ -221,10 +265,11 @@ public class AlbumService {
             fileTagInfoRepository.deleteByTag(tag);
         }
 
-        // 관련 파일 삭제
-        List<File> files = fileRepository.findByAlbumOrderByCreatedAtDescIdDesc(album,
-                PageRequest.of(0, Integer.MAX_VALUE));
-        fileRepository.deleteAll(files);
+        // DB에서 해당 앨범의 파일 레코드 일괄 삭제
+        fileRepository.deleteByAlbum(album);
+
+        // S3 파일 삭제 (albumId 기준: albumId/..., original/albumId/...)
+        s3Util.deleteAllByAlbumPrefix(album.getId());
 
         // 앨범 삭제 (cascade로 태그와 멤버도 함께 삭제됨)
         albumRepository.delete(album);
@@ -432,7 +477,7 @@ public class AlbumService {
         return new AlbumMemberResponse(memberCount, albumMemberResults);
     }
 
-    public List<String> getAlbumMemberFcmTokens(Long albumId){
+    public List<String> getAlbumMemberFcmTokens(Long albumId) {
         return albumMemberRepository.findTokensByAlbumId(albumId);
     }
 
@@ -541,9 +586,11 @@ public class AlbumService {
         // 파일 개수 조회
         long fileCount = fileRepository.countByAlbum(album);
 
+        String coverImageUrl = coverImageResolver.resolve(album.getCoverImageUrl());
+
         return new AlbumDetailResponse(
                 album.getName(),
-                album.getCoverImageUrl(),
+                coverImageUrl,
                 fileCount);
     }
 

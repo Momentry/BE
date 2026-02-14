@@ -19,6 +19,7 @@ import com.momentry.BE.domain.album.entity.AlbumTag;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
 import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.repository.AlbumTagRepository;
+import com.momentry.BE.domain.album.util.CoverImageResolver;
 import com.momentry.BE.domain.search.dto.AlbumSearchResponse;
 import com.momentry.BE.domain.search.dto.SearchAlbumsResponse;
 import com.momentry.BE.domain.search.dto.SearchTagsResponse;
@@ -41,6 +42,7 @@ public class SearchService {
     private final UserRepository userRepository;
     private final AlbumRepository albumRepository;
     private final AlbumMemberRepository albumMemberRepository;
+    private final CoverImageResolver coverImageResolver;
 
     /**
      * 태그 이름으로 검색
@@ -198,7 +200,7 @@ public class SearchService {
         return new AlbumSearchResponse(
                 album.getId(),
                 album.getName(),
-                album.getCoverImageUrl(),
+                coverImageResolver.resolve(album.getCoverImageUrl()),
                 album.getCreatedAt(),
                 memberCount,
                 memberProfileUrls);
