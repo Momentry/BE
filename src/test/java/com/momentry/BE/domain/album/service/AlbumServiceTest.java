@@ -42,6 +42,7 @@ import com.momentry.BE.domain.album.exception.NoAlbumMemberEditPermissionExcepti
 import com.momentry.BE.domain.album.exception.NoAlbumPermissionException;
 import com.momentry.BE.domain.album.exception.TagNotFoundException;
 import com.momentry.BE.domain.album.util.CoverImageResolver;
+import com.momentry.BE.domain.album.util.CoverImageS3KeyValidator;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
 import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.repository.AlbumTagRepository;
@@ -90,6 +91,9 @@ class AlbumServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private CoverImageS3KeyValidator coverImageS3KeyValidator;
+
     private AlbumService albumService;
     private Album album;
     private AlbumMember albumMember;
@@ -98,7 +102,8 @@ class AlbumServiceTest {
     void setUp() {
         albumService = new AlbumService(albumRepository, albumTagRepository, albumMemberRepository,
                 fileTagInfoRepository,
-                fileRepository, userRepository, fileUtil, s3Util, coverImageResolver, eventPublisher);
+                fileRepository, userRepository, fileUtil, s3Util, coverImageResolver, coverImageS3KeyValidator,
+                eventPublisher);
         album = Album.builder().name("test").build();
         AccountPlan plan = AccountPlan.builder().plan("FREE").build();
         User user = User.builder().email("a@b.com").username("user").accountPlan(plan).build();

@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-import org.springframework.beans.factory.annotation.Value;
 import com.momentry.BE.global.event.dto.AlbumCreateEvent;
 import com.momentry.BE.global.event.dto.AlbumInviteEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -18,6 +17,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.momentry.BE.domain.album.dto.AlbumCreationResponse;
@@ -47,6 +47,7 @@ import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
 import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.repository.AlbumTagRepository;
 import com.momentry.BE.domain.album.util.CoverImageResolver;
+import com.momentry.BE.domain.album.util.CoverImageS3KeyValidator;
 import com.momentry.BE.domain.file.dto.FilePageResult;
 import com.momentry.BE.domain.file.dto.FileResult;
 import com.momentry.BE.domain.file.dto.TagThumbnailRowDto;
@@ -80,10 +81,7 @@ public class AlbumService {
     private final FileUtil fileUtil;
     private final S3Util s3Util;
     private final CoverImageResolver coverImageResolver;
-
-    // S3 키 내 커버 이미지 폴더명 (앨범별 경로: {albumId}/{cover-image}/{filename})
-    @Value("${app.s3.cover-image-folder:cover-image/}")
-    private String COVER_IMAGE_FOLDER;
+    private final CoverImageS3KeyValidator coverImageS3KeyValidator;
 
     /**
      * 커버 이미지 S3에 업로드, DB 갱신
@@ -99,18 +97,20 @@ public class AlbumService {
         if (!fileUtil.isAllowedCoverImageType(coverImage.getContentType())) {
             throw new InvalidFileTypeException();
         }
-        // 앨범당 커버는 하나만 유지: 기존 S3 커버가 있으면 삭제 후 새로 업로드
+        // 앨범당 커버는 하나만 유지
+        // S3 key일 때만 S3 객체 삭제 (URL 혹은 이상한 값은 스킵)
         String currentCover = album.getCoverImageUrl();
-        if (currentCover != null && !currentCover.startsWith("http")) {
+        if (coverImageS3KeyValidator.isS3KeyFormat(currentCover)) {
             try {
                 s3Util.delete(currentCover);
             } catch (Exception e) {
                 log.warn("기존 커버 이미지 S3 삭제 실패 (albumId={}, key={})", album.getId(), currentCover, e);
             }
         }
+
         String fileId = UUID.randomUUID().toString();
         String extension = fileUtil.getExtension(coverImage.getContentType());
-        String fileKey = album.getId() + "/" + COVER_IMAGE_FOLDER + fileId + extension;
+        String fileKey = album.getId() + "/" + coverImageS3KeyValidator.getCoverImageFolder() + fileId + extension;
         try {
             s3Util.upload(fileKey, coverImage.getInputStream(), coverImage.getSize(), coverImage.getContentType());
             album.setCoverImageUrl(fileKey);
@@ -140,6 +140,9 @@ public class AlbumService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
+        if (!StringUtils.hasText(albumName)) {
+            throw new IllegalArgumentException("앨범 이름은 필수입니다.");
+        }
         // 앨범 이름 중복 체크 (내가 멤버인 앨범 안에서만)
         if (albumMemberRepository.existsByAlbumNameAndUserId(albumName, userId)) {
             throw new DuplicateAlbumNameException();
@@ -163,6 +166,7 @@ public class AlbumService {
         albumMemberRepository.save(albumMember);
 
         // 2~4. 커버 이미지가 있으면 업로드 시도, 성공 시 coverUrl 갱신, 실패 시 기본 이미지 유지 + 응답에 표시
+        // 커버 이미지는 null 혹은 s3 key만 저장됨 (이상한 문자열, 링크, 경로 등은 저장되지 않음)
         boolean coverUploadFailed = tryUploadCoverImage(savedAlbum, coverImage);
 
         // fcm 메세지 전송 - 이벤트 발행
@@ -194,15 +198,11 @@ public class AlbumService {
         Album album = albumRepository.findById(albumId)
                 .orElseThrow(AlbumNotFoundException::new);
 
-        // 앨범 이름 업데이트 (제공된 경우)
-        if (albumName != null && !albumName.isBlank()) {
-            // 다른 앨범과 이름 중복 체크 (자기 자신은 제외)
-            albumRepository.findByName(albumName)
-                    .ifPresent(existingAlbum -> {
-                        if (!existingAlbum.getId().equals(albumId)) {
-                            throw new DuplicateAlbumNameException();
-                        }
-                    });
+        // 앨범 이름 업데이트 (제공된 경우에만, null/공백이면 스킵)
+        if (StringUtils.hasText(albumName)) {
+            if (albumMemberRepository.existsByAlbumNameAndUserId(albumName, userId)) {
+                throw new DuplicateAlbumNameException();
+            }
             album.setName(albumName);
         }
 

@@ -2,6 +2,7 @@ package com.momentry.BE.domain.album.util;
 
 import com.momentry.BE.global.config.CloudFrontProperties;
 import com.momentry.BE.global.util.S3Util;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -12,6 +13,7 @@ import org.springframework.util.StringUtils;
  * - 업로드된 커버 이미지: CloudFront url-prefix 경로 (로그인 시 발급 쿠키로 접근)
  */
 @Component
+@RequiredArgsConstructor
 public class CoverImageResolver {
 
     // CloudFront public 미사용 시 fallback (외부 URL)
@@ -19,20 +21,17 @@ public class CoverImageResolver {
 
     private final S3Util s3Util;
     private final CloudFrontProperties cloudFrontProperties;
-
-    public CoverImageResolver(S3Util s3Util, CloudFrontProperties cloudFrontProperties) {
-        this.s3Util = s3Util;
-        this.cloudFrontProperties = cloudFrontProperties;
-    }
+    private final CoverImageS3KeyValidator coverImageS3KeyValidator;
 
     public String resolve(String coverImageUrl) {
-        if (coverImageUrl == null || coverImageUrl.isBlank()) { // 기본 커버 이미지인 경우
+        if (coverImageUrl == null || coverImageUrl.isBlank()) {
             return resolveDefaultCoverUrl();
         }
-        if (!coverImageUrl.startsWith("http")) { // S3 key 인 경우
+        if (coverImageS3KeyValidator.isS3KeyFormat(coverImageUrl)) {
             return resolveUploadedCoverUrl(coverImageUrl);
         }
-        return coverImageUrl; // 외부 URL인 경우 (그대로 반환)
+        // S3 키가 아닌 값(URL, 이상한 문자열)은 클라이언트에 노출하지 않고 기본 커버 반환 (보안)
+        return resolveDefaultCoverUrl();
     }
 
     // 기본 커버 이미지 가져오기 (CloudFront public URL)
