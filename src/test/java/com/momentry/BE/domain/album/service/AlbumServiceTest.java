@@ -55,6 +55,7 @@ import com.momentry.BE.domain.file.util.FileUtil;
 import com.momentry.BE.domain.user.entity.AccountPlan;
 import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.repository.UserRepository;
+import com.momentry.BE.domain.user.service.sub.UserService;
 import com.momentry.BE.global.exception.CursorDecodeFailException;
 import com.momentry.BE.global.util.S3Util;
 
@@ -94,6 +95,9 @@ class AlbumServiceTest {
     @Mock
     private CoverImageS3KeyValidator coverImageS3KeyValidator;
 
+    @Mock
+    private UserService userService;
+
     private AlbumService albumService;
     private Album album;
     private AlbumMember albumMember;
@@ -103,7 +107,7 @@ class AlbumServiceTest {
         albumService = new AlbumService(albumRepository, albumTagRepository, albumMemberRepository,
                 fileTagInfoRepository,
                 fileRepository, userRepository, fileUtil, s3Util, coverImageResolver, coverImageS3KeyValidator,
-                eventPublisher);
+                userService, eventPublisher);
         album = Album.builder().name("test").build();
         AccountPlan plan = AccountPlan.builder().plan("FREE").build();
         User user = User.builder().email("a@b.com").username("user").accountPlan(plan).build();

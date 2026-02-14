@@ -7,8 +7,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
@@ -18,6 +21,8 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static org.springframework.util.StringUtils.hasText;
@@ -39,9 +44,7 @@ public class S3Util {
         upload(key, is, contentLength, null);
     }
 
-    /**
-     * S3에 업로드. contentType을 주면 브라우저에서 "열기" 시 다운로드가 아닌 미리보기로 열리도록 설정함.
-     */
+    // S3에 업로드. contentType을 주면 브라우저에서 "열기" 시 다운로드가 아닌 미리보기로 열리도록 설정함.
     public void upload(String key, InputStream is, long contentLength, String contentType) {
         PutObjectRequest.Builder builder = PutObjectRequest.builder()
                 .bucket(bucketName)
@@ -54,20 +57,33 @@ public class S3Util {
         s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(is, contentLength));
     }
 
-    public void deleteAll(File targetFile) {
+    // 파일 하나에 연결된 S3 객체(origin, thumbnail, display) 일괄 삭제
+    public void deleteS3ObjectsForFile(File file) {
+        List<String> keys = new ArrayList<>();
+        if (hasText(file.getOriginUrl()))
+            keys.add(file.getOriginUrl());
+        if (hasText(file.getThumbUrl()))
+            keys.add(file.getThumbUrl());
+        if (hasText(file.getDisplayUrl()))
+            keys.add(file.getDisplayUrl());
+        if (keys.isEmpty()) // 삭제할 키가 없으면 스킵
+            return;
+
         try {
-            if (hasText(targetFile.getOriginUrl()))
-                delete(targetFile.getOriginUrl());
-            if (hasText(targetFile.getThumbUrl()))
-                delete(targetFile.getThumbUrl());
-            if (hasText(targetFile.getDisplayUrl()))
-                delete(targetFile.getDisplayUrl());
+            List<ObjectIdentifier> identifiers = keys.stream()
+                    .map(k -> ObjectIdentifier.builder().key(k).build())
+                    .toList();
+            s3Client.deleteObjects(DeleteObjectsRequest.builder()
+                    .bucket(bucketName)
+                    .delete(Delete.builder().objects(identifiers).build())
+                    .build());
         } catch (Exception e) {
             // 예외를 던지는 대신 로그를 남겨서 전체 프로세스가 멈추지 않게 함
-            log.error("S3 물리 파일 삭제 실패 (File ID: {}): {}", targetFile.getId(), e.getMessage());
+            log.error("S3 객체 삭제 실패 (fileId={}): {}", file.getId(), e.getMessage());
         }
     }
 
+    // 단일 S3 객체 삭제
     public void delete(String key) {
         DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                 .bucket(bucketName)
