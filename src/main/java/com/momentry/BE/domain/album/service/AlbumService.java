@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.momentry.BE.domain.album.dto.*;
 import com.momentry.BE.global.event.dto.AlbumCreateEvent;
 import com.momentry.BE.global.event.dto.AlbumInviteEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -20,13 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.momentry.BE.domain.album.dto.AlbumCreationResponse;
-import com.momentry.BE.domain.album.dto.AlbumDetailResponse;
-import com.momentry.BE.domain.album.dto.AlbumMemberInviteResult;
-import com.momentry.BE.domain.album.dto.AlbumMemberResponse;
-import com.momentry.BE.domain.album.dto.AlbumTagResult;
-import com.momentry.BE.domain.album.dto.AlbumMemberResult;
-import com.momentry.BE.domain.album.dto.InvitedMemberResult;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.entity.AlbumMember;
 import com.momentry.BE.domain.album.entity.AlbumTag;
@@ -283,7 +277,7 @@ public class AlbumService {
      * @param userId  사용자 ID
      */
     @Transactional
-    public void createTag(Long albumId, String tagName, Long userId) {
+    public AlbumTagSimpleResult createTag(Long albumId, String tagName, Long userId) {
         AlbumMember albumMember = getAlbumPermissionWithAlbum(albumId, userId);
 
         requireEditPermission(albumMember.getPermission());
@@ -298,7 +292,8 @@ public class AlbumService {
         }
 
         try {
-            albumTagRepository.saveAndFlush(tag);
+            AlbumTag savedTag = albumTagRepository.saveAndFlush(tag);
+            return new AlbumTagSimpleResult(savedTag.getId(), savedTag.getTagName());
         } catch (DataIntegrityViolationException e) {
             throw new DuplicateTagException();
         }

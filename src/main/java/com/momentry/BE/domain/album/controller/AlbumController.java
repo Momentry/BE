@@ -2,6 +2,7 @@ package com.momentry.BE.domain.album.controller;
 
 import java.util.List;
 
+import com.momentry.BE.domain.album.dto.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -16,16 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.momentry.BE.domain.album.dto.AlbumCreationRequest;
-import com.momentry.BE.domain.album.dto.AlbumCreationResponse;
-import com.momentry.BE.domain.album.dto.AlbumDetailResponse;
-import com.momentry.BE.domain.album.dto.AlbumMemberResponse;
-import com.momentry.BE.domain.album.dto.AlbumMemberInviteRequest;
-import com.momentry.BE.domain.album.dto.AlbumMemberInviteResult;
-import com.momentry.BE.domain.album.dto.AlbumMemberPermissionUpdateRequest;
-import com.momentry.BE.domain.album.dto.AlbumTagResult;
-import com.momentry.BE.domain.album.dto.TagCreationRequest;
-import com.momentry.BE.domain.album.dto.TagUpdateRequest;
 import com.momentry.BE.domain.album.service.AlbumService;
 import com.momentry.BE.domain.file.dto.FilePageResult;
 import com.momentry.BE.global.dto.ApiResponse;
@@ -111,8 +102,8 @@ public class AlbumController {
     @PostMapping("/{albumId}/tags")
     public ResponseEntity<ApiResponse<Object>> createTag(@PathVariable Long albumId,
             @RequestBody TagCreationRequest request) {
-        albumService.createTag(albumId, request.getTagName(), SecurityUtil.getCurrentUserId());
-        return ApiResponse.ofSuccess();
+        AlbumTagSimpleResult newTagResult = albumService.createTag(albumId, request.getTagName(), SecurityUtil.getCurrentUserId());
+        return ApiResponse.ofSuccess(HttpStatus.CREATED, newTagResult);
     }
 
     @DeleteMapping("/{albumId}/tags/{tagId}")
