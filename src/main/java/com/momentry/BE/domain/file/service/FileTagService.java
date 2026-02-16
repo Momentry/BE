@@ -65,6 +65,12 @@ public class FileTagService {
         // 새로운 정보만 일괄 저장
         if (!newTagInfos.isEmpty()) {
             fileTagInfoRepository.saveAll(newTagInfos);
+
+            Set<Long> updatedTagIdSet = newTagInfos.stream()
+                            .map(fileTagInfo -> fileTagInfo.getTag().getId())
+                            .collect(Collectors.toSet());
+
+            albumTagService.updateTagCount(updatedTagIdSet);
         }
     }
 
@@ -78,5 +84,8 @@ public class FileTagService {
 
         // 삭제 실행
         fileTagInfoRepository.deleteByFileIdsAndTagIds(fileIdList, tagIdList);
+
+        // 태그 count값 업데이트
+        albumTagService.updateTagCount(tagIdList);
     }
 }
