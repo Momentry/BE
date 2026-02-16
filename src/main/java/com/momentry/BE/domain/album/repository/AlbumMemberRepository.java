@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.momentry.BE.domain.album.dto.AlbumCountDto;
+import com.momentry.BE.domain.album.dto.AlbumPermissionDto;
 import com.momentry.BE.domain.album.dto.AlbumUrlDto;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.entity.AlbumMember;
@@ -49,6 +50,9 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
     @Query("SELECT am.permission FROM AlbumMember am " +
             "WHERE am.album.id = :albumId AND am.user.id = :userId")
     Optional<MemberAlbumPermission> findPermissionByAlbumIdAndUserId(Long albumId, Long userId);
+
+    @Query("SELECT new com.momentry.BE.domain.album.dto.AlbumPermissionDto(am.album.id, am.permission) FROM AlbumMember am WHERE am.user.id = :userId ")
+    List<AlbumPermissionDto> findAlbumPermissionsByUserId(@Param("userId") Long userId);
 
     @Query("""
             SELECT u.fcmToken

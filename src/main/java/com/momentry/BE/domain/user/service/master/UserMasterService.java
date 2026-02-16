@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.momentry.BE.domain.album.dto.AlbumCountDto;
 import com.momentry.BE.domain.album.dto.AlbumHeaderDto;
+import com.momentry.BE.domain.album.dto.AlbumPermissionDto;
 import com.momentry.BE.domain.album.dto.AlbumUrlDto;
 import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
@@ -193,6 +194,14 @@ public class UserMasterService {
         }
 
         return new GetCurrentUserFileListResponse(files.stream().map(FileResult::of).toList(), nextCursor);
+    }
+
+    @Transactional(readOnly = true)
+    public GetAlbumPermissionsResponse getAlbumPermissions(Long userId) {
+        List<AlbumPermissionDto> albumPermissions = albumMemberRepository.findAlbumPermissionsByUserId(userId);
+        return new GetAlbumPermissionsResponse(albumPermissions.stream().collect(Collectors.toMap(
+                AlbumPermissionDto::getAlbumId,
+                AlbumPermissionDto::getPermission)));
     }
 
     private FileCursor parseCursor(String cursor) {

@@ -65,7 +65,6 @@ public class UserController {
         return ApiResponse.ofSuccess();
     }
 
-
     @GetMapping("/{userId}/albums")
     public ResponseEntity<ApiResponse<GetCurrentUserAlbumListResponse>> getCurrentUserAlbumList(
             @PathVariable Long userId) {
@@ -91,6 +90,15 @@ public class UserController {
             @RequestParam(required = false) String cursor) {
         validateSelf(userId);
         GetCurrentUserFileListResponse response = userMasterService.getCurrentUserFileList(userId, cursor);
+
+        return ApiResponse.ofSuccess(response);
+    }
+
+    @GetMapping("/{userId}/album-permissions")
+    public ResponseEntity<ApiResponse<GetAlbumPermissionsResponse>> getAlbumPermissions(
+            @PathVariable Long userId) {
+        validateSelf(userId);
+        GetAlbumPermissionsResponse response = userMasterService.getAlbumPermissions(userId);
 
         return ApiResponse.ofSuccess(response);
     }
