@@ -28,7 +28,8 @@ public class SecurityConfig {
 
     private static final String[] PERMIT_ALL_PATHS = {
             "/api/auth/social",
-            "/api/auth/refresh"
+            "/api/auth/refresh",
+            "/api/health"
     };
 
     @Bean
