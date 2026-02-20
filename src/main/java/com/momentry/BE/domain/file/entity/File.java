@@ -45,6 +45,8 @@ public class File {
     @Column(nullable = false, columnDefinition = "bigint default 0")
     private Long likesCount = 0L;
 
+    private Long fileSize;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private FileType fileType;
@@ -57,7 +59,7 @@ public class File {
 
     @Builder
     public File(Album album, String fileKey, String originUrl, String thumbUrl, String displayUrl,
-                String metadata, String contentType, FileType fileType, User uploader, LocalDateTime capturedAt) {
+                String metadata, String contentType, FileType fileType, User uploader, LocalDateTime capturedAt, Long fileSize) {
         // 유효성 체크: 필수 값이 없으면 객체 생성 자체를 막음
         Assert.notNull(album, "앨범은 필수 값입니다.");
         Assert.hasText(fileKey, "파일 키는 필수 값입니다.");
@@ -78,6 +80,7 @@ public class File {
 
         this.createdAt = LocalDateTime.now();
         this.likesCount = 0L; // 기본값은 0
+        this.fileSize = fileSize;
     }
 
     public void incrementLikesCount(){

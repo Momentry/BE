@@ -218,6 +218,7 @@ public class FileService {
                 .contentType(saveFileDto.getContentType())
                 .fileKey(saveFileDto.getFileKey())
                 .capturedAt(saveFileDto.getCapturedAt())
+                .fileSize(saveFileDto.getFileSize())
                 .build();
 
         // DB에 저장
