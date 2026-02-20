@@ -1,7 +1,6 @@
 package com.momentry.BE.domain.file.service;
 
 import com.momentry.BE.domain.file.dto.SaveFileDto;
-import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,8 +9,6 @@ import com.momentry.BE.domain.file.dto.MediaProcessingResultDto;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.time.LocalDateTime;
 
 @Slf4j
 @Service

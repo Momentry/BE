@@ -8,4 +8,5 @@ import lombok.Getter;
 public class UploadFileInfoDto {
     private Long fileNo;
     private String contentType;
+    private Long contentLength;
 }

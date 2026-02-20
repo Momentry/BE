@@ -1,6 +1,5 @@
 package com.momentry.BE.domain.file.service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -65,7 +64,12 @@ public class FileService {
             String fileKey = FILEKEY_PREFIX + albumId + "/" + fileId + extension;
 
             // upload용 presigned url 생성
-            String uploadUrl = s3Util.generatePresignedUploadUrl(uploaderId, fileKey, fileInfo.getContentType());
+            String uploadUrl = s3Util.generatePresignedUploadUrl(
+                    uploaderId,
+                    fileKey,
+                    fileInfo.getContentType(),
+                    fileInfo.getContentLength()
+            );
 
             uploadUrlList.add(
                     UploadUrlResponseDto.builder()
