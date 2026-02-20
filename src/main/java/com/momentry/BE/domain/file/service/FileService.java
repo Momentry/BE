@@ -4,24 +4,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import com.momentry.BE.domain.album.entity.Album;
-import com.momentry.BE.domain.album.repository.AlbumRepository;
-import com.momentry.BE.domain.file.dto.*;
-import com.momentry.BE.domain.file.util.FileUtil;
-import com.momentry.BE.domain.user.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.entity.MemberAlbumPermission;
+import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.service.AlbumPermissionService;
+import com.momentry.BE.domain.file.dto.FileUploadRequestDto;
+import com.momentry.BE.domain.file.dto.FileUploadResponseDto;
+import com.momentry.BE.domain.file.dto.GetFileDetailResponseDto;
+import com.momentry.BE.domain.file.dto.SaveFileDto;
+import com.momentry.BE.domain.file.dto.UploadFileInfoDto;
+import com.momentry.BE.domain.file.dto.UploadUrlResponseDto;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileLike;
+import com.momentry.BE.domain.file.entity.FileType;
 import com.momentry.BE.domain.file.exception.AlreadyLikedException;
 import com.momentry.BE.domain.file.exception.FileNotFoundException;
+import com.momentry.BE.domain.file.exception.ImageFileSizeLimitExceededException;
+import com.momentry.BE.domain.file.exception.InvalidFileSizeException;
 import com.momentry.BE.domain.file.repository.FileLikeRepository;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import com.momentry.BE.domain.file.repository.FileTagInfoRepository;
+import com.momentry.BE.domain.file.util.FileUtil;
+import com.momentry.BE.domain.user.entity.User;
 import com.momentry.BE.domain.user.repository.UserRepository;
 import com.momentry.BE.global.util.S3Util;
 
@@ -32,6 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class FileService {
+    private static final long MAX_IMAGE_UPLOAD_SIZE_BYTES = 10L * 1024L * 1024L;
+
     private final S3Util s3Util;
     private final FileUtil fileUtil;
     private final AlbumPermissionService albumPermissionService;
@@ -54,6 +64,8 @@ public class FileService {
 
         List<UploadUrlResponseDto> uploadUrlList = new ArrayList<>();
         for(UploadFileInfoDto fileInfo : getFileUploadUrlsRequestDtoList.getUploadFileInfoList()){
+            validateUploadFileInfo(fileInfo);
+
             // 각 파일에 uuid 부여
             String fileId = UUID.randomUUID().toString();
 
@@ -80,6 +92,17 @@ public class FileService {
         }
 
         return FileUploadResponseDto.of(uploadUrlList);
+    }
+
+    private void validateUploadFileInfo(UploadFileInfoDto fileInfo) {
+        if (fileInfo.getContentLength() == null || fileInfo.getContentLength() <= 0L) {
+            throw new InvalidFileSizeException();
+        }
+
+        FileType fileType = FileType.fromContentType(fileInfo.getContentType());
+        if (fileType == FileType.IMAGE && fileInfo.getContentLength() > MAX_IMAGE_UPLOAD_SIZE_BYTES) {
+            throw new ImageFileSizeLimitExceededException();
+        }
     }
 
     @Transactional
