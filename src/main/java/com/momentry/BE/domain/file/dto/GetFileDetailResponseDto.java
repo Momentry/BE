@@ -21,9 +21,12 @@ public class GetFileDetailResponseDto {
     private List<Long> tags;
     private String metadata;
     private Boolean isLiked;
+    private Long fileSize;
 
     public static GetFileDetailResponseDto of(File file, List<Long> tags, Boolean isLiked, String uploaderProfileImageUrl) {
         User uploaderInfo = file.getUploader();
+
+        Long fileSize = file.getFileSize() != null ? file.getFileSize() : 0;
 
         return new GetFileDetailResponseDto(
             file.getId(),
@@ -35,7 +38,8 @@ public class GetFileDetailResponseDto {
             uploaderProfileImageUrl,
             tags,
             file.getMetadata(),
-            isLiked
+            isLiked,
+            fileSize
         );
     }
 }

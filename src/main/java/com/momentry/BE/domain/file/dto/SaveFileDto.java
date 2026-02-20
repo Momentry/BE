@@ -24,6 +24,7 @@ public class SaveFileDto {
     private String thumbnailPath;
     private String displayPath;
     private String fileKey;
+    private Long fileSize;
 
     // SQS 큐 메시지로 생성
     public static SaveFileDto of(MediaProcessingResultDto uploadMessage){
@@ -44,6 +45,7 @@ public class SaveFileDto {
                 .thumbnailPath(uploadMessage.getThumbnailPath())
                 .displayPath(uploadMessage.getDisplayPath())
                 .fileKey(uploadMessage.getFileKey())
+                .fileSize(Long.parseLong(uploadMessage.getFileSize()))
                 .build();
     }
 }

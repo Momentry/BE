@@ -22,4 +22,5 @@ public class MediaProcessingResultDto {
     private String capturedAt;
     private String metadata;
     private String contentType;
+    private String fileSize;
 }
