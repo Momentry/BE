@@ -23,8 +23,11 @@ import com.momentry.BE.domain.file.dto.UploadFileInfoDto;
 import com.momentry.BE.domain.file.dto.UploadUrlDto;
 import com.momentry.BE.domain.file.entity.File;
 import com.momentry.BE.domain.file.entity.FileLike;
+import com.momentry.BE.domain.file.entity.FileType;
 import com.momentry.BE.domain.file.exception.AlreadyLikedException;
 import com.momentry.BE.domain.file.exception.FileNotFoundException;
+import com.momentry.BE.domain.file.exception.ImageFileSizeLimitExceededException;
+import com.momentry.BE.domain.file.exception.InvalidFileSizeException;
 import com.momentry.BE.domain.file.repository.FileLikeRepository;
 import com.momentry.BE.domain.file.repository.FileRepository;
 import com.momentry.BE.domain.file.repository.FileTagInfoRepository;
@@ -40,6 +43,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class FileService {
+    private static final long MAX_IMAGE_UPLOAD_SIZE_BYTES = 10L * 1024L * 1024L;
+
     private final S3Util s3Util;
     private final FileUtil fileUtil;
     private final AlbumPermissionService albumPermissionService;
@@ -63,6 +68,7 @@ public class FileService {
 
         List<UploadUrlDto> uploadUrlList = new ArrayList<>();
         for (UploadFileInfoDto fileInfo : getFileUploadUrlsRequestDtoList.getUploadFileInfoList()) {
+            validateUploadFileInfo(fileInfo);
             // 각 파일에 uuid 부여
             String fileId = UUID.randomUUID().toString();
 
@@ -88,6 +94,17 @@ public class FileService {
         }
 
         return FileUploadResponseDto.of(uploadUrlList);
+    }
+
+    private void validateUploadFileInfo(UploadFileInfoDto fileInfo) {
+        if (fileInfo.getContentLength() == null || fileInfo.getContentLength() <= 0L) {
+            throw new InvalidFileSizeException();
+        }
+
+        FileType fileType = FileType.fromContentType(fileInfo.getContentType());
+        if (fileType == FileType.IMAGE && fileInfo.getContentLength() > MAX_IMAGE_UPLOAD_SIZE_BYTES) {
+            throw new ImageFileSizeLimitExceededException();
+        }
     }
 
     @Transactional

@@ -1,10 +1,21 @@
 package com.momentry.BE.global.util;
 
-import com.momentry.BE.domain.file.entity.File;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import static org.springframework.util.StringUtils.hasText;
+
+import java.io.InputStream;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import com.momentry.BE.domain.file.entity.File;
+import com.momentry.BE.domain.file.exception.InvalidFileSizeException;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.Delete;
@@ -20,15 +31,6 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
-
-import java.io.InputStream;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static org.springframework.util.StringUtils.hasText;
-
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -168,7 +170,7 @@ public class S3Util {
     public String generatePresignedUploadUrl(Long uploaderId, String fileKey, String contentType, Long contentLength) {
         if (!hasText(fileKey)) return null;
         if (contentLength == null || contentLength <= 0L) {
-            throw new IllegalArgumentException("contentLength must be greater than 0");
+            throw new InvalidFileSizeException();
         }
 
         // 업로드될 파일의 위치와 설정 정의
