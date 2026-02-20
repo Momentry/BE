@@ -60,7 +60,7 @@ public class CloudFrontSignedCookieService {
         
         String albumsStr = albumIds.stream()
                 .map(String::valueOf)
-                .collect(Collectors.joining(","));
+                .collect(Collectors.joining("_"));
 
         String data = String.format("%d:%d:%s", userId, exp, albumsStr);
 
