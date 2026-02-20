@@ -73,7 +73,12 @@ public class FileService {
             String fileKey = FILEKEY_PREFIX + albumId + "/" + fileId + extension;
 
             // upload용 presigned url 생성
-            String uploadUrl = s3Util.generatePresignedUploadUrl(uploaderId, fileKey, fileInfo.getContentType());
+            String uploadUrl = s3Util.generatePresignedUploadUrl(
+                    uploaderId,
+                    fileKey,
+                    fileInfo.getContentType(),
+                    fileInfo.getContentLength()
+            );
 
             uploadUrlList.add(
                     UploadUrlDto.builder()

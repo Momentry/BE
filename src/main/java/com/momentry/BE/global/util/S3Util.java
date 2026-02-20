@@ -165,16 +165,22 @@ public class S3Util {
         return presignedRequest.url().toString();
     }
 
-    public String generatePresignedUploadUrl(Long uploaderId, String fileKey, String contentType) {
-        if (!hasText(fileKey))
-            return null;
+    public String generatePresignedUploadUrl(Long uploaderId, String fileKey, String contentType, Long contentLength) {
+        if (!hasText(fileKey)) return null;
+        if (contentLength == null || contentLength <= 0L) {
+            throw new IllegalArgumentException("contentLength must be greater than 0");
+        }
 
         // 업로드될 파일의 위치와 설정 정의
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(fileKey)
                 .contentType(contentType)
-                .metadata(Map.of("uploaderid", String.valueOf(uploaderId)))
+                .contentLength(contentLength)
+                .metadata(Map.of(
+                        "uploaderid", String.valueOf(uploaderId),
+                        "expectedcontentlength", String.valueOf(contentLength)
+                ))
                 .build();
 
         // Presigned URL 발급 옵션 설정
