@@ -13,6 +13,7 @@ import java.util.function.Function;
 import com.momentry.BE.domain.album.dto.*;
 import com.momentry.BE.global.event.dto.AlbumCreateEvent;
 import com.momentry.BE.global.event.dto.AlbumInviteEvent;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
@@ -66,6 +67,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class AlbumService {
+    @Value("${app.s3.upload-prefix:original/}")
+    private String FILEKEY_PREFIX;
 
     private final AlbumRepository albumRepository;
     private final AlbumTagRepository albumTagRepository;
@@ -106,7 +109,7 @@ public class AlbumService {
 
         String fileId = UUID.randomUUID().toString();
         String extension = fileUtil.getExtension(coverImage.getContentType());
-        String fileKey = album.getId() + "/" + coverImageS3KeyValidator.getCoverImageFolder() + fileId + extension;
+        String fileKey = FILEKEY_PREFIX + album.getId() + "/" + coverImageS3KeyValidator.getCoverImageFolder() + fileId + extension;
         try {
             s3Util.upload(fileKey, coverImage.getInputStream(), coverImage.getSize(), coverImage.getContentType());
             album.setCoverImageUrl(fileKey);
@@ -171,7 +174,8 @@ public class AlbumService {
         return new AlbumCreationResponse(
                 savedAlbum.getId(),
                 savedAlbum.getName(),
-                coverUploadFailed);
+                coverUploadFailed
+        );
     }
 
     /**
