@@ -1,5 +1,6 @@
 package com.momentry.BE.global.event.listener;
 
+import com.momentry.BE.domain.album.service.AlbumInfoUpdateService;
 import com.momentry.BE.domain.album.service.AlbumService;
 import com.momentry.BE.domain.album.util.CoverImageS3KeyValidator;
 import com.momentry.BE.domain.file.exception.InvalidFileTypeException;
@@ -23,7 +24,7 @@ import java.util.UUID;
 public class AlbumCoverUploadEventListener {
     private final FileUtil fileUtil;
     private final S3Util s3Util;
-    private final AlbumService albumService;
+    private final AlbumInfoUpdateService albumInfoUpdateService;
     private final CoverImageS3KeyValidator coverImageS3KeyValidator;
 
     @Async("s3UploadExecutor") // 별도의 스레드 풀 사용
@@ -53,10 +54,12 @@ public class AlbumCoverUploadEventListener {
         // S3 업로드
         try {
             s3Util.upload(fileKey, event.getFile().getInputStream(), event.getFile().getSize(), event.getFile().getContentType());
+            albumInfoUpdateService.updateAlbumInfo(event.getAlbum(), null, fileKey);
             log.info("앨범 커버 이미지 S3 업로드 성공 (albumId={})", event.getAlbumId());
-            albumService.updateAlbumInfo(event.getAlbum(), null, fileKey);
         } catch (IOException e) {
             log.warn("커버 이미지 업로드 실패, 기존 이미지 유지 (albumId={})", event.getAlbumId(), e);
+
+            // TODO: FCM으로 앨범 커버 업로드 실패 사실 전달하기
         }
     }
 }
