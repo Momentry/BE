@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import com.momentry.BE.domain.album.dto.*;
+import com.momentry.BE.global.event.dto.AlbumCoverUploadEvent;
 import com.momentry.BE.global.event.dto.AlbumCreateEvent;
 import com.momentry.BE.global.event.dto.AlbumInviteEvent;
 import org.springframework.beans.factory.annotation.Value;
@@ -165,7 +166,18 @@ public class AlbumService {
 
         // 2~4. 커버 이미지가 있으면 업로드 시도, 성공 시 coverUrl 갱신, 실패 시 기본 이미지 유지 + 응답에 표시
         // 커버 이미지는 null 혹은 s3 key만 저장됨 (이상한 문자열, 링크, 경로 등은 저장되지 않음)
-        boolean coverUploadFailed = tryUploadCoverImage(savedAlbum, coverImage);
+        boolean coverUploadFailed = false;  // 프론트에서 사용되지 않고 있는 값!
+        if(coverImage != null && !coverImage.isEmpty()){
+            AlbumCoverUploadEvent coverUplaodEvent = new AlbumCoverUploadEvent(
+                    album.getId(),
+                    user.getId(),
+                    coverImage,
+                    album.getCoverImageUrl(),
+                    album
+            );
+            // 앨범 커버 업로드 이벤트 발행
+            eventPublisher.publishEvent(coverUplaodEvent);
+        }
 
         // fcm 메세지 전송 - 이벤트 발행
         AlbumCreateEvent event = new AlbumCreateEvent(user.getId(), album.getId(), album.getName());
@@ -206,7 +218,10 @@ public class AlbumService {
         }
 
         // 커버 이미지 업데이트 (제공된 경우) — 실패 시 기존 이미지 유지
-        tryUploadCoverImage(album, coverImage);
+        if(coverImage != null && !coverImage.isEmpty()){
+            tryUploadCoverImage(album, coverImage);
+            // TODO: 여기도 이벤트 발행 -> 비동기 처리 흐름으로 바꾸기
+        }
 
         albumRepository.save(album);
     }
@@ -272,6 +287,22 @@ public class AlbumService {
         // 앨범 삭제 (cascade로 태그와 멤버도 함께 삭제됨)
         albumRepository.delete(album);
     }
+
+
+    // 앨범의 수정사항을 DB에 반영
+    @Transactional
+    public void updateAlbumInfo(Album album, String albumName, String coverImageS3FileKey){
+        if(albumName != null){
+            album.setName(albumName);
+        }
+
+        if(coverImageS3FileKey != null){
+            album.setCoverImageUrl(coverImageS3FileKey);
+        }
+
+        albumRepository.save(album);
+    }
+
 
     /**
      * 앨범 태그 생성
