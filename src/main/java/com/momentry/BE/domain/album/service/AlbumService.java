@@ -68,9 +68,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class AlbumService {
-    @Value("${app.s3.upload-prefix:original/}")
-    private String FILEKEY_PREFIX;
-
     private final AlbumRepository albumRepository;
     private final AlbumTagRepository albumTagRepository;
     private final AlbumMemberRepository albumMemberRepository;
@@ -110,7 +107,7 @@ public class AlbumService {
 
         String fileId = UUID.randomUUID().toString();
         String extension = fileUtil.getExtension(coverImage.getContentType());
-        String fileKey = FILEKEY_PREFIX + album.getId() + "/" + coverImageS3KeyValidator.getCoverImageFolder() + fileId + extension;
+        String fileKey = album.getId() + "/" + coverImageS3KeyValidator.getCoverImageFolder() + fileId + extension;
         try {
             s3Util.upload(fileKey, coverImage.getInputStream(), coverImage.getSize(), coverImage.getContentType());
             album.setCoverImageUrl(fileKey);

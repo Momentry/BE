@@ -21,9 +21,6 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 public class AlbumCoverUploadEventListener {
-    @Value("${app.s3.upload-prefix:original/}")
-    private String FILEKEY_PREFIX;
-
     private final FileUtil fileUtil;
     private final S3Util s3Util;
     private final AlbumService albumService;
@@ -51,7 +48,7 @@ public class AlbumCoverUploadEventListener {
         // 파일 키 생성
         String fileId = UUID.randomUUID().toString();
         String extension = fileUtil.getExtension(event.getFile().getContentType());
-        String fileKey = FILEKEY_PREFIX + event.getAlbumId() + "/" + coverImageS3KeyValidator.getCoverImageFolder() + fileId + extension;
+        String fileKey = event.getAlbumId() + "/" + coverImageS3KeyValidator.getCoverImageFolder() + fileId + extension;
 
         // S3 업로드
         try {
