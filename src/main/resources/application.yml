@@ -29,6 +29,11 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      # 환경변수가 없으면 기본값(예: 10)을 사용하도록 설정
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: ${DB_MIN_IDLE:5}
+      connection-timeout: ${DB_CONN_TIMEOUT:5000} # 아까 논의한 '안전 모드'를 위해 5초 권장
   jpa:
     hibernate:
       ddl-auto: update
