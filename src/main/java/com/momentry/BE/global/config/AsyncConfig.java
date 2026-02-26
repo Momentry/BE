@@ -1,5 +1,7 @@
 package com.momentry.BE.global.config;
 
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +13,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 @EnableAsync
+@Slf4j
 public class AsyncConfig {
     @Value("${ASYNC_CORE_POOL_SIZE:5}") // 환경변수가 없으면 5를 기본값으로 사용
     private int corePoolSize;
@@ -20,6 +23,13 @@ public class AsyncConfig {
 
     @Value("${ASYNC_QUEUE_CAPACITY:100}")
     private int queueCapacity;
+
+    @PostConstruct
+    public void checkConfig() {
+        log.info("### ASYNC_CORE_POOL_SIZE: {}", corePoolSize);
+        log.info("### ASYNC_MAX_POOL_SIZE: {}", maxPoolSize);
+        log.info("### ASYNC_QUEUE_CAPACITY: {}", queueCapacity);
+    }
 
     @Bean(name = "s3UploadExecutor")
     public Executor s3UploadExecutor(){
