@@ -1,6 +1,8 @@
 package com.momentry.BE.domain.album.service;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -11,6 +13,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import com.momentry.BE.domain.album.dto.*;
+import com.momentry.BE.domain.album.exception.*;
 import com.momentry.BE.global.event.dto.AlbumCoverUploadEvent;
 import com.momentry.BE.global.event.dto.AlbumCreateEvent;
 import com.momentry.BE.global.event.dto.AlbumInviteEvent;
@@ -27,18 +30,6 @@ import com.momentry.BE.domain.album.entity.Album;
 import com.momentry.BE.domain.album.entity.AlbumMember;
 import com.momentry.BE.domain.album.entity.AlbumTag;
 import com.momentry.BE.domain.album.entity.MemberAlbumPermission;
-import com.momentry.BE.domain.album.exception.AlbumMemberNotFoundException;
-import com.momentry.BE.domain.album.exception.AlbumMustHaveManagerException;
-import com.momentry.BE.domain.album.exception.AlbumNotFoundException;
-import com.momentry.BE.domain.album.exception.CannotKickManagerException;
-import com.momentry.BE.domain.album.exception.DuplicateAlbumNameException;
-import com.momentry.BE.domain.album.exception.DuplicateTagException;
-import com.momentry.BE.domain.album.exception.InvalidAlbumInviteRequestException;
-import com.momentry.BE.domain.album.exception.NoAlbumEditPermissionException;
-import com.momentry.BE.domain.album.exception.NoAlbumMemberEditPermissionException;
-import com.momentry.BE.domain.album.exception.NoAlbumPermissionException;
-import com.momentry.BE.domain.album.exception.TagLimitExceededException;
-import com.momentry.BE.domain.album.exception.TagNotFoundException;
 import com.momentry.BE.domain.album.repository.AlbumMemberRepository;
 import com.momentry.BE.domain.album.repository.AlbumRepository;
 import com.momentry.BE.domain.album.repository.AlbumTagRepository;
@@ -165,15 +156,38 @@ public class AlbumService {
         // 커버 이미지는 null 혹은 s3 key만 저장됨 (이상한 문자열, 링크, 경로 등은 저장되지 않음)
         boolean coverUploadFailed = false;  // 프론트에서 사용되지 않고 있는 값!
         if(coverImage != null && !coverImage.isEmpty()){
-            AlbumCoverUploadEvent coverUplaodEvent = new AlbumCoverUploadEvent(
-                    album.getId(),
-                    user.getId(),
-                    coverImage,
-                    album.getCoverImageUrl(),
-                    album
-            );
-            // 앨범 커버 업로드 이벤트 발행
-            eventPublisher.publishEvent(coverUplaodEvent);
+            // 유효한 타입인지 검사
+            if (!fileUtil.isAllowedCoverImageType(coverImage.getContentType())) {
+                throw new InvalidFileTypeException();
+            }
+
+            try{
+                // 시스템 임시 디렉토리 경로 가져오기
+                String tempDir = System.getProperty("java.io.tmpdir");
+
+                // 고유한 파일명 생성 (겹치지 않게 UUID 사용)
+                String tempFileName = "album_cover_" + UUID.randomUUID() + ".tmp";
+                Path tempPath = Paths.get(tempDir, tempFileName);
+
+                // 임시파일 저장 및 경로 추출
+                coverImage.transferTo(tempPath.toFile());
+                String tempFilePath = tempPath.toAbsolutePath().toString();
+
+                // 앨범 커버 업로드 이벤트 객체 생성
+                AlbumCoverUploadEvent coverUplaodEvent = AlbumCoverUploadEvent.builder()
+                        .album(album)
+                        .contentType(coverImage.getContentType())
+                        .prevAlbumCoverUrl(album.getCoverImageUrl())
+                        .targetFilePath(tempFilePath)
+                        .userId(user.getId())
+                        .build();
+
+                // 앨범 커버 업로드 이벤트 발행
+                eventPublisher.publishEvent(coverUplaodEvent);
+            }catch(IOException e){
+                log.error("앨범 커버 업로드 중 임시 파일 저장 실패", e);
+                throw new AlbumCoverUploadException("커버 이미지 업로드 준비 중 오류가 발생했습니다.");
+            }
         }
 
         // fcm 메세지 전송 - 이벤트 발행
