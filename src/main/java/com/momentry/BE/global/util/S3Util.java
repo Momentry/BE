@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import com.momentry.BE.domain.file.exception.InvalidFileSizeException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.Delete;
@@ -66,20 +68,21 @@ public class S3Util {
 
     // 파일 하나에 연결된 S3 객체(origin, thumbnail, display) 일괄 삭제
     public void deleteS3ObjectsForFile(File file) {
-        List<String> keys = new ArrayList<>();
-        if (hasText(file.getOriginUrl()))
-            keys.add(file.getOriginUrl());
-        if (hasText(file.getThumbUrl()))
-            keys.add(file.getThumbUrl());
-        if (hasText(file.getDisplayUrl()))
-            keys.add(file.getDisplayUrl());
-        if (keys.isEmpty()) // 삭제할 키가 없으면 스킵
-            return;
-
         try {
-            List<ObjectIdentifier> identifiers = keys.stream()
-                    .map(k -> ObjectIdentifier.builder().key(k).build())
+            List<ObjectIdentifier> identifiers = Stream.of(
+                            file.getOriginUrl(),
+                            file.getDisplayUrl(),
+                            file.getThumbUrl()
+                    )
+                    .filter(StringUtils::hasText)
+                    .map(this::extractS3Key)
+                    .map(key->ObjectIdentifier.builder().key(key).build())
                     .toList();
+
+            if(identifiers.isEmpty()){
+                return;
+            }
+
             s3Client.deleteObjects(DeleteObjectsRequest.builder()
                     .bucket(bucketName)
                     .delete(Delete.builder().objects(identifiers).build())
@@ -88,6 +91,19 @@ public class S3Util {
             // 예외를 던지는 대신 로그를 남겨서 전체 프로세스가 멈추지 않게 함
             log.error("S3 객체 삭제 실패 (fileId={}): {}", file.getId(), e.getMessage());
         }
+    }
+
+    private String extractS3Key(String url) {
+        // CloudFront URL 구조: https://domain/album/{s3 key}
+        String DELIMITER = "/album/";
+
+        int index = url.indexOf(DELIMITER);
+
+        if (index == -1) {
+            return url;
+        }
+
+        return url.substring(index + DELIMITER.length());
     }
 
     // 단일 S3 객체 삭제
