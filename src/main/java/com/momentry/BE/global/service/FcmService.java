@@ -8,6 +8,7 @@ import com.google.firebase.messaging.BatchResponse;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.MulticastMessage;
 import com.google.firebase.messaging.Notification;
+import com.google.firebase.messaging.SendResponse;
 import com.momentry.BE.global.exception.FcmTokenEmptyException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -86,7 +87,23 @@ public class FcmService {
 
     private void sendMessage(MulticastMessage message) throws Exception {
         BatchResponse batchResponse = FirebaseMessaging.getInstance().sendEachForMulticast(message);
-        // 필요시 batchResponse 활용 결과 로그 출력
+
+        log.info("FCM 전송 결과: 성공={}, 실패={}, 전체={}",
+                batchResponse.getSuccessCount(),
+                batchResponse.getFailureCount(),
+                batchResponse.getResponses().size());
+
+        if (batchResponse.getFailureCount() > 0) {
+            List<SendResponse> responses = batchResponse.getResponses();
+            for (int i = 0; i < responses.size(); i++) {
+                SendResponse sr = responses.get(i);
+                if (!sr.isSuccessful()) {
+                    log.warn("FCM 전송 실패 [인덱스 {}]: {}",
+                            i,
+                            sr.getException() != null ? sr.getException().getMessage() : "unknown");
+                }
+            }
+        }
     }
 }
 
