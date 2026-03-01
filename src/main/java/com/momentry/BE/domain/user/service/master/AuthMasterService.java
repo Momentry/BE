@@ -2,6 +2,7 @@ package com.momentry.BE.domain.user.service.master;
 
 import java.util.List;
 
+import com.momentry.BE.domain.user.exception.MismatchUserException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,5 +96,47 @@ public class AuthMasterService {
         String newAccessToken = jwtUtil.generateAccessToken(user.getId(), user.getUsername());
 
         return new RefreshResponse(newAccessToken);
+    }
+
+
+    // 테스트 로그인 시 토큰 발급
+    @Transactional
+    public LoginResponse testLogin(LoginRequest request, HttpServletResponse response) {
+        // test 유저 계정이 맞는지 확인
+        if(!request.getIdToken().equals("teammomentry") || !request.getFcmToken().equals("testPWD123")){
+            throw new MismatchUserException();
+        }
+
+        OidcClaims claims = OidcClaims.builder()
+                .sub("testSub4442")
+                .email("testUser@test.com")
+                .name("testUser")
+                .build();
+
+        // 2. 사용자 조회 or 회원 가입
+        User user = userService.findOrCreateUser(claims, "TEST-PROVIDER");
+
+        // 2-1. 회원탈퇴 했던 유저라면 활성화
+        if (!user.getIsActive()) {
+            userService.restoreUser(user);
+        }
+
+        // 2-2. fcmToken 업데이트
+        userService.updateFcmToken(user, request.getFcmToken());
+
+        // 3. AlertPreference 조회 or 생성
+        AlertPreference alertPreference = alertPreferenceService.getOrCreateAlertPreference(user);
+
+        // 4. JWT 토큰 발급 (백엔드 JWT)
+        String accessToken = jwtUtil.generateAccessToken(user.getId(), user.getUsername());
+        String refreshToken = jwtUtil.generateRefreshToken(user.getId());
+
+        List<Long> albumIds = albumService.getAlbumIds(user);
+        cloudFrontSignedCookieService.addSignedCookieHeaders(response, user.getId(), albumIds);
+
+        // 5. refreshToken은 쿠키에 저장하기
+        cookieUtil.saveRefreshTokenCookie(response, refreshToken, refreshTokenExpiration);
+
+        return new LoginResponse(user, alertPreference, accessToken);
     }
 }

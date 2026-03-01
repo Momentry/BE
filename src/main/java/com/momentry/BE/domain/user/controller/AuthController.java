@@ -36,4 +36,12 @@ public class AuthController {
 
         return ApiResponse.ofSuccess(refreshResponse);
     }
+
+    // 심사용 테스트 로그인 API
+    @PostMapping("/test-login")
+    public ResponseEntity<ApiResponse<LoginResponse>> testLogin(@RequestBody LoginRequest request, HttpServletResponse response){
+        LoginResponse responseData = authMasterService.testLogin(request, response);
+
+        return ApiResponse.ofSuccess(responseData);
+    }
 }
