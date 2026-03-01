@@ -47,7 +47,7 @@ public class AuthMasterService {
         OidcClaims claims = idTokenValidator.validateToken(request.getProvider(), request.getIdToken());
 
         // 2. 사용자 조회 or 회원 가입
-        User user = userService.findOrCreateUser(claims, request.getProvider());
+        User user = userService.findOrCreateUser(claims, request.getProvider().name());
 
         // 2-1. 회원탈퇴 했던 유저라면 활성화
         if (!user.getIsActive()) {

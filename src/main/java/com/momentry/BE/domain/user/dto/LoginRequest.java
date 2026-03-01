@@ -1,5 +1,6 @@
 package com.momentry.BE.domain.user.dto;
 
+import com.momentry.BE.domain.user.enums.Provider;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,5 +11,5 @@ import lombok.NoArgsConstructor;
 public class LoginRequest {
     private String idToken;
     private String fcmToken;
-    private String provider;
+    private Provider provider;
 }
