@@ -73,6 +73,9 @@ oauth:
   google:
     client-id: ${GOOGLE_CLIENT_ID:accounts.google.com}
     issuer: accounts.google.com
+  apple:
+    client-id: ${APPLE_CLIENT_ID:com.frontend}
+    issuer: https://appleid.apple.com
 
 cloudfront:
   enabled: ${CF_ENABLED:false}
