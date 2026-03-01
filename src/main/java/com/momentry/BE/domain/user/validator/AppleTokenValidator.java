@@ -78,10 +78,16 @@ public class AppleTokenValidator implements OauthValidator {
             log.debug("Apple ID Token validated successfully for user: {}",
                     claims.getSubject());
 
+            // name 추출
+            String name = claims.getStringClaim("name");
+            if (name == null || name.isBlank()) {
+                name = "AppleUser_" + claims.getSubject().substring(0, 6);
+            }
+
             return OidcClaims.builder()
                     .sub(claims.getSubject())
                     .email(claims.getStringClaim("email"))
-                    .name(claims.getStringClaim("name")) // 거의 null일 가능성 높음
+                    .name(name)
                     .build();
 
         } catch (Exception e) {
