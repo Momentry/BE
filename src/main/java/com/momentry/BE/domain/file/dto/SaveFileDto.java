@@ -30,7 +30,7 @@ public class SaveFileDto {
     public static SaveFileDto of(MediaProcessingResultDto uploadMessage){
         // capturedAt null 체크
         LocalDateTime capturedAt = LocalDateTime.now();
-        if(uploadMessage.getCapturedAt() != null && !uploadMessage.getCapturedAt().isEmpty()){
+        if(uploadMessage.getCapturedAt() != null && !uploadMessage.getCapturedAt().isEmpty() && !uploadMessage.getCapturedAt().trim().equals("T")){
             capturedAt = LocalDateTime.parse(uploadMessage.getCapturedAt());
         }
 
